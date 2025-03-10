@@ -1,4 +1,87 @@
+// filepath: /Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/App.cs
 using BlazorBankingApp.Components;
+using Npgsql;
+using System.Threading.Tasks;
+using Supabase;
+using Npgsql.Internal;
+using System.Collections.Generic;
+using DotNetEnv; // Add this using directive
+
+/************IMPORTANT***********
+    THESE ARE THE DIRECTIONS FOR ADDING THE VARIABLES
+    1. In the terminal, change directory to BankingSystem and 
+        install nuget package using 'dotnet add package Npgsql'
+    2. Copy each of the export commands below and paste them into your terminal
+    3. Run the program
+***********************************************************************************
+
+export SUPABASE_URL="https://pldcjrdychteqvmixmff.supabase.co"
+export DATABASE_URL="postgresql://postgres.pldcjrdychteqvmixmff:qbxDNHmye0YZFL8v@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
+export SUPABASE_SERVICE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsZGNqcmR5Y2h0ZXF2bWl4bWZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MDQyOTA1MywiZXhwIjoyMDU2MDA1MDUzfQ.0tzaHJYtXSFrwMp3DCjdm6SejQdc_pUA3ASUm89-oqM"
+
+or, if on windows/powershell 
+
+
+$env:SUPABASE_URL="https://pldcjrdychteqvmixmff.supabase.co"
+$env:DATABASE_URL="postgresql://postgres.pldcjrdychteqvmixmff:qbxDNHmye0YZFL8v@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
+$env:SUPABASE_SERVICE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsZGNqcmR5Y2h0ZXF2bWl4bWZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MDQyOTA1MywiZXhwIjoyMDU2MDA1MDUzfQ.0tzaHJYtXSFrwMp3DCjdm6SejQdc_pUA3ASUm89-oqM"
+*/
+
+
+// Load environment variables from .env file
+DotNetEnv.Env.Load();
+
+// Debug: Print the SUPABASE_URL to verify it is loaded
+Console.WriteLine($"SUPABASE_URL: {Environment.GetEnvironmentVariable("SUPABASE_URL")}");
+
+// Fetch Supabase credentials from environment variables
+var url = Environment.GetEnvironmentVariable("SUPABASE_URL")?.Trim() ?? throw new InvalidOperationException("SUPABASE_URL environment variable is not set.");
+var key = Environment.GetEnvironmentVariable("SUPABASE_SERVICE_KEY")?.Trim() ?? throw new InvalidOperationException("SUPABASE_SERVICE_KEY environment variable is not set.");
+
+// PostgreSQL connection string for Supabase database
+string databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? throw new InvalidOperationException("DATABASE_URL environment variable is not set.");
+
+// Convert the URI to a standard connection string
+var uri = new Uri(databaseUrl);
+var userInfo = uri.UserInfo.Split(':');
+string connectionString = $"Host=aws-0-us-east-1.pooler.supabase.com;Port=5432;Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SslMode=Require;Trust Server Certificate=true;";
+// Initialize Supabase Client
+var options = new SupabaseOptions { AutoConnectRealtime = true };
+var supabase = new Client(url, key, options);
+
+try
+{
+    await supabase.InitializeAsync();
+    Console.WriteLine("Connected to Supabase successfully!");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Failed to initialize Supabase client: {ex.Message}");
+    return; // Exit if Supabase fails to connect
+}
+
+// Connect to PostgreSQL inside Supabase
+try
+{
+    using (var conn = new NpgsqlConnection(connectionString))
+    {
+        await conn.OpenAsync();
+        Console.WriteLine("Connected to Supabase PostgreSQL successfully!");
+
+        // Test Query
+        using (var cmd = new NpgsqlCommand("SELECT NOW()", conn))
+        {
+            var result = await cmd.ExecuteScalarAsync();
+            Console.WriteLine($"Database time: {result}");
+        }
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Database connection failed: {ex.Message}");
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +100,6 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 
 app.UseAntiforgery();
 
