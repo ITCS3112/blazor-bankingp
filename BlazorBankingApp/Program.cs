@@ -43,7 +43,7 @@ namespace BankingSystem
     We have it creating a sample user.
     Finished on 3/9/25
     */
-    class Register
+    class Program
     {
         static async Task Main(string[] args)
         {
