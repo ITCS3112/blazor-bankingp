@@ -1,0 +1,31 @@
+# Build and binary files
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.log
+
+# User-specific files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+# Supabase Dependencies
+supabase/
+.supabase/
+supabase-config.json
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.sln.ide
