@@ -1,26 +1,26 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\junio\\OneDrive\\Documents\\Coding\\blazor-bankingp\\BlazorBankingApp\\BlazorBankingApp.csproj": {}
+    "/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/BlazorBankingApp.csproj": {}
   },
   "projects": {
-    "C:\\Users\\junio\\OneDrive\\Documents\\Coding\\blazor-bankingp\\BlazorBankingApp\\BlazorBankingApp.csproj": {
+    "/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/BlazorBankingApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\junio\\OneDrive\\Documents\\Coding\\blazor-bankingp\\BlazorBankingApp\\BlazorBankingApp.csproj",
+        "projectUniqueName": "/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/BlazorBankingApp.csproj",
         "projectName": "BlazorBankingApp",
-        "projectPath": "C:\\Users\\junio\\OneDrive\\Documents\\Coding\\blazor-bankingp\\BlazorBankingApp\\BlazorBankingApp.csproj",
-        "packagesPath": "C:\\Users\\junio\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\junio\\OneDrive\\Documents\\Coding\\blazor-bankingp\\BlazorBankingApp\\obj\\",
+        "projectPath": "/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/BlazorBankingApp.csproj",
+        "packagesPath": "/Users/zacharyvogel/.nuget/packages/",
+        "outputPath": "/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\junio\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/Users/zacharyvogel/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
-          "C:\\Program Files\\dotnet\\library-packs": {},
+          "/usr/local/share/dotnet/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -77,7 +77,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.102/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.102/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
