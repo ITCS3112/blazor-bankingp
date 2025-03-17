@@ -1,2 +1,21 @@
 @page "/login"
 
+<h1> Welcome To Charlotte's Banking App</h1>
+<p>Login</p>
+<textbox @bind="username" placeholder="Username" />
+<textbox @bind="password" placeholder="Password" type="password" />
+<button @onclick="login">Login</button>
+
+<link href="SignUp.razor" aria-placeholder="Create An Account"/>
+
+
+@code {
+    private string username;
+    private string password;
+
+    private void login()
+    {
+        // Placeholder for login logic
+        Console.WriteLine($"Username: {username}, Password: {password}");
+    }
+}
