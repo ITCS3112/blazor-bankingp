@@ -1,8 +1,25 @@
 ﻿@page "/"
 @rendermode InteractiveServer
 
+@inject NavigationManager Navigation
+
 <PageTitle>Home</PageTitle>
 
-<h1>Welcome to the Home Page of Charlotte Banking Group 2025</h1>
+<h1>Welcome to the Home Page of Charlotte Banking Group</h1>
 
 Please Login or Create An account.
+
+<button class="btn btn-primary" @onclick="GoToLogin">Login</button>
+<button class="btn btn-primary" @onclick="GoToSignUp">Sign Up</button>
+
+@code {
+	private void GoToLogin()
+	{
+		Navigation.NavigateTo("/login");
+	}
+
+	private void GoToSignUp()
+	{
+		Navigation.NavigateTo("/signup");
+	}
+}
