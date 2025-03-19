@@ -1,25 +1,70 @@
-@page "/login"
+@page "/"
 @inject Supabase.Client SupabaseClient
+@inject NavigationManager NavigationManager
+<div class="login-container">
+    <h1 class="text-center mb-4">Welcome to Charlotte's Banking App</h1>
+    
+    <div class="card shadow p-4">
+        <h3 class="text-center">Login</h3>
+        
+        <div class="mb-3">
+            <label for="username" class="form-label">Email</label>
+            <input @bind="username" id="username" type="email" class="form-control" placeholder="Enter your email" />
+        </div>
 
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input @bind="password" id="password" type="password" class="form-control" placeholder="Enter your password" />
+        </div>
 
-<pagetitle>Login</pagetitle>
+        <button @onclick="login" class="btn btn-primary w-100">Login</button>
 
-<h1> Welcome To Charlotte's Banking App</h1>
-<p>Login</p>
-<textbox @bind="username" placeholder="Username" />
-<textbox @bind="password" placeholder="Password" type="password" />
-<button @onclick="login">Login</button>
+        @if (!string.IsNullOrEmpty(loginMessage))
+        {
+            <div class="alert mt-3" style="color: red;">@loginMessage</div>
+        }
 
-<link href="SignUp.razor" aria-placeholder="Create An Account"/>
+        <div class="mt-3 text-center">
+            <a href="/signup">Create an Account</a>
+            <button @onclick="@(() => NavigationManager.NavigateTo("home"))">Go to Home</button>
+        </div>
+    </div>
+</div>
 
+<style>
+    .login-container {
+        max-width: 400px;
+        margin: 50px auto;
+    }
+</style>
 
 @code {
     private string username;
     private string password;
+    private string loginMessage = string.Empty;
 
-    private void login()
+    private async Task login()
     {
-        // Placeholder for login logic
-        Console.WriteLine($"Username: {username}, Password: {password}");
+        try
+        {
+            var response = await SupabaseClient.Auth.SignIn(username, password);
+
+            if (response.User != null)
+            {
+                loginMessage = "Login successful!";
+                Console.WriteLine("User logged in: " + response.User.Email);
+                // Redirect to the home page
+                NavigationManager.NavigateTo("home");
+            }
+            else
+            {
+                loginMessage = "Invalid email or password.";
+            }
+        }
+        catch (Exception ex)
+        {
+            loginMessage = $"Error: {ex.Message}";
+            Console.WriteLine($"Login error: {ex.Message}");
+        }
     }
 }

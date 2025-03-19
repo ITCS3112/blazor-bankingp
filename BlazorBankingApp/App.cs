@@ -105,9 +105,12 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAntiforgery();
+//app.MapFallbackToPage("/Login"); // Set Login as the default page
+
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
 
 app.Run();
