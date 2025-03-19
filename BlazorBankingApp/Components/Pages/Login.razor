@@ -1,5 +1,6 @@
-@page "/login"
+@page "/"
 @inject Supabase.Client SupabaseClient
+@inject NavigationManager Navigation
 
 
 <pagetitle>Login</pagetitle>
@@ -14,12 +15,32 @@
 
 
 @code {
-    private string username;
+    private string email;
     private string password;
+    private string loginMessage = string.Empty;
 
-    private void login()
+    private async Task login()
     {
-        // Placeholder for login logic
-        Console.WriteLine($"Username: {username}, Password: {password}");
+        try
+        {
+            var response = await SupabaseClient.Auth.SignIn(email, password);
+
+            if (response.User != null)
+            {
+                loginMessage = "Login successful!";
+                Console.WriteLine("User logged in: " + response.User.Email);
+                // Redirect to another page after login if needed
+                Navigation.NavigateTo("/home");
+            }
+            else
+            {
+                loginMessage = "Invalid email or password.";
+            }
+        }
+        catch (Exception ex)
+        {
+            loginMessage = $"Error: {ex.Message}";
+            Console.WriteLine($"Login error: {ex.Message}");
+        }
     }
 }
