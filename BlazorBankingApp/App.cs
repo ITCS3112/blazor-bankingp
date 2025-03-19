@@ -50,6 +50,7 @@ string connectionString = $"Host=aws-0-us-east-1.pooler.supabase.com;Port=5432;D
 var options = new SupabaseOptions { AutoConnectRealtime = true };
 var supabase = new Client(url, key, options);
 
+
 try
 {
     await supabase.InitializeAsync();
@@ -88,6 +89,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddSingleton(_ => new Supabase.Client(url, key, options));
+
 
 var app = builder.Build();
 
