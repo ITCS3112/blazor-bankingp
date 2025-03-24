@@ -24,16 +24,16 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xBcHAucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/junio/OneDrive/Documents/Coding/blazor-bankingp/BlazorBankingApp/Components/Pages/About.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBYm91dC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/junio/OneDrive/Documents/Coding/blazor-bankingp/BlazorBankingApp/Components/Pages/Counter.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDb3VudGVyLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/junio/OneDrive/Documents/Coding/blazor-bankingp/BlazorBankingApp/Components/Pages/Error.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xFcnJvci5yYXpvcg==
-build_metadata.AdditionalFiles.CssScope = 
-
-[C:/Users/junio/OneDrive/Documents/Coding/blazor-bankingp/BlazorBankingApp/Components/Pages/Home.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIb21lLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/junio/OneDrive/Documents/Coding/blazor-bankingp/BlazorBankingApp/Components/Pages/Login.razor]
@@ -63,3 +63,7 @@ build_metadata.AdditionalFiles.CssScope = b-zlzqozqigf
 [C:/Users/junio/OneDrive/Documents/Coding/blazor-bankingp/BlazorBankingApp/Components/Layout/NavMenu.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcTmF2TWVudS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = b-jkapa7a945
+
+[C:/Users/junio/OneDrive/Documents/Coding/blazor-bankingp/BlazorBankingApp/Components/Pages/Home.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIb21lLnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-w9itypit3h

@@ -1,17 +1,20 @@
 ﻿@page "/"
 @rendermode InteractiveServer
-
+@inject Supabase.Client SupabaseClient
 @inject NavigationManager Navigation
 
 <PageTitle>Home</PageTitle>
-
+<div class="home-page-background">
+<img src="/images/CLT logo white.png" alt="CLT Logo" class="home-page-logo" />
 <h1>Welcome to the Home Page of Charlotte Banking Group</h1>
 
-Please Login or Create An account.
+<p>Please Login or Create An account.</p>
 
-<button class="btn btn-primary" @onclick="GoToLogin">Login</button>
-<button class="btn btn-primary" @onclick="GoToSignUp">Sign Up</button>
-
+<div class="button-container">
+	<button class="btn btn-primary" @onclick="GoToLogin">Login</button>
+	<button class="btn btn-primary" @onclick="GoToSignUp">Sign Up</button>
+</div>
+</div>
 @code {
 	private void GoToLogin()
 	{
