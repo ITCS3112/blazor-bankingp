@@ -90,6 +90,8 @@ builder.Services.AddSingleton(_ => new Supabase.Client(url, key, options));
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddSingleton(_ => new Supabase.Client(url, key, options));
+
 
 var app = builder.Build();
 
@@ -105,9 +107,12 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAntiforgery();
+//app.MapFallbackToPage("/Login"); // Set Login as the default page
+
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
 
 app.Run();
