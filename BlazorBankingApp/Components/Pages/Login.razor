@@ -1,4 +1,5 @@
 @page "/"
+@rendermode InteractiveServer
 @inject Supabase.Client SupabaseClient
 @inject NavigationManager NavigationManager
 <div class="login-container">
@@ -18,7 +19,7 @@
                 placeholder="Enter your password" />
         </div>
 
-        <button @onclick="@(() => NavigationManager.NavigateTo("/home"))">Go to Home</button>
+        <button @onclick="login" class="btn btn-primary w-100">Login</button>
 
         @if (!string.IsNullOrEmpty(loginMessage))
         {
@@ -58,11 +59,8 @@
 
     private async Task login()
     {
-        try
-        {
-            var response = await SupabaseClient.Auth.SignIn(email, password);
-
-            if (response.User != null)
+        var response = await SupabaseClient.Auth.SignIn(email, password);
+        if (response.User != null)
             {
                 loginMessage = "Login successful!";
                 Console.WriteLine("User logged in: " + response.User.Email);
@@ -73,11 +71,17 @@
             {
                 loginMessage = "Invalid email or password.";
             }
+
+        /*try
+        {
+            
+
+            
         }
         catch (Exception ex)
         {
             loginMessage = $"Error: {ex.Message}";
             Console.WriteLine($"Login error: {ex.Message}");
-        }
+        }*/
     }
 }
