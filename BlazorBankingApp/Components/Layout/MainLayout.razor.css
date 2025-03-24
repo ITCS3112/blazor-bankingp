@@ -95,14 +95,15 @@ main.home-page {
     text-align: center;
 }
 .layout-image-container {
-    display: flex;
-    justify-content: center;
-    margin: 20px 0;
+    position: absolute;
+    bottom: 20px;
+    right: 20px
 }
 
 .layout-logo {
     width: 150px; /* Adjust the width as needed */
     height: auto; /* Maintain the aspect ratio */
+    opacity: 0.5;
 }
 
 #blazor-error-ui {
