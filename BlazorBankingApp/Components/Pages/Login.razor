@@ -59,8 +59,12 @@
 
     private async Task login()
     {
-        var response = await SupabaseClient.Auth.SignIn(email, password);
-        if (response.User != null)
+
+        try
+        {
+            var response = await SupabaseClient.Auth.SignIn(email, password);
+
+            if (response.User != null)
             {
                 loginMessage = "Login successful!";
                 Console.WriteLine("User logged in: " + response.User.Email);
@@ -72,16 +76,12 @@
                 loginMessage = "Invalid email or password.";
             }
 
-        /*try
-        {
-            
-
             
         }
         catch (Exception ex)
         {
             loginMessage = $"Error: {ex.Message}";
             Console.WriteLine($"Login error: {ex.Message}");
-        }*/
+        }
     }
 }
