@@ -94,6 +94,16 @@ main.home-page {
     height: 100vh;
     text-align: center;
 }
+.layout-image-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.layout-logo {
+    width: 150px; /* Adjust the width as needed */
+    height: auto; /* Maintain the aspect ratio */
+}
 
 #blazor-error-ui {
     color-scheme: light only;
