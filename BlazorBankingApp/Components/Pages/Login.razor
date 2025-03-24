@@ -19,7 +19,7 @@
                 placeholder="Enter your password" />
         </div>
 
-        <button @onclick="@(() => NavigationManager.NavigateTo("/home"))">Go to Home</button>
+        <button @onclick="login" class="btn btn-primary w-100">Login</button>
 
         @if (!string.IsNullOrEmpty(loginMessage))
         {
@@ -59,6 +59,7 @@
 
     private async Task login()
     {
+
         try
         {
             var response = await SupabaseClient.Auth.SignIn(email, password);
@@ -74,6 +75,8 @@
             {
                 loginMessage = "Invalid email or password.";
             }
+
+            
         }
         catch (Exception ex)
         {
