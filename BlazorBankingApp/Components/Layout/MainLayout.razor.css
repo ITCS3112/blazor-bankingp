@@ -2,6 +2,9 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    /*background: linear-gradient(135deg, rgb(180, 203, 247) 70%, #865094 90%);*/
+
+
 }
 
 main {
@@ -12,8 +15,13 @@ main {
     background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
 }
 
+.sidebar.no-background {
+    background-image: none;
+}
+
 .top-row {
-    background-color: #f7f7f7;
+    /*background-color: #f7f7f7;*/
+    background: linear-gradient(90deg, rgb(5, 39, 103) 0%, #3a0647 70%);
     border-bottom: 1px solid #d6d5d5;
     justify-content: flex-end;
     height: 3.5rem;
@@ -57,6 +65,9 @@ main {
         position: sticky;
         top: 0;
     }
+    .sidebar.no-background {
+        width: 0;
+    }
 
     .top-row {
         position: sticky;
@@ -74,6 +85,14 @@ main {
         padding-left: 2rem !important;
         padding-right: 1.5rem !important;
     }
+}
+main.home-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    text-align: center;
 }
 
 #blazor-error-ui {
