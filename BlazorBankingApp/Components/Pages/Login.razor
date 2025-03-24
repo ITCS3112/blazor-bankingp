@@ -18,7 +18,7 @@
                 placeholder="Enter your password" />
         </div>
 
-        <button @onclick="login" class="btn btn-primary w-100">Login</button>
+        <button @onclick="@(() => NavigationManager.NavigateTo("/home"))">Go to Home</button>
 
         @if (!string.IsNullOrEmpty(loginMessage))
         {
