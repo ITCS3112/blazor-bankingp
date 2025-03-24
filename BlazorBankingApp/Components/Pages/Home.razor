@@ -1,1 +1,23 @@
+﻿@page "/home"
+@rendermode InteractiveServer
+@inject Supabase.Client SupabaseClient
+@inject NavigationManager Navigation
+
+
+<PageTitle>Home</PageTitle>
+<div class="home-page-background">
+
+</div>
+@code {
+    private void GoToLogin()
+    {
+        Navigation.NavigateTo("/login");
+    }
+
+
+    private void GoToSignUp()
+    {
+        Navigation.NavigateTo("/signup");
+    }
+}
 
