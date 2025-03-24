@@ -13,19 +13,7 @@ using DotNetEnv; // Add this using directive
         install nuget package using 'dotnet add package Npgsql'
     2. Copy each of the export commands below and paste them into your terminal
     3. Run the program
-***********************************************************************************
-
-export SUPABASE_URL="https://pldcjrdychteqvmixmff.supabase.co"
-export DATABASE_URL="postgresql://postgres.pldcjrdychteqvmixmff:qbxDNHmye0YZFL8v@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
-export SUPABASE_SERVICE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsZGNqcmR5Y2h0ZXF2bWl4bWZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MDQyOTA1MywiZXhwIjoyMDU2MDA1MDUzfQ.0tzaHJYtXSFrwMp3DCjdm6SejQdc_pUA3ASUm89-oqM"
-
-or, if on windows/powershell 
-
-
-$env:SUPABASE_URL="https://pldcjrdychteqvmixmff.supabase.co"
-$env:DATABASE_URL="postgresql://postgres.pldcjrdychteqvmixmff:qbxDNHmye0YZFL8v@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
-$env:SUPABASE_SERVICE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsZGNqcmR5Y2h0ZXF2bWl4bWZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MDQyOTA1MywiZXhwIjoyMDU2MDA1MDUzfQ.0tzaHJYtXSFrwMp3DCjdm6SejQdc_pUA3ASUm89-oqM"
-*/
+***********************************************************************************/
 
 
 // Load environment variables from .env file
