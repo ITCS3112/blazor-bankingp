@@ -24,20 +24,14 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9BcHAucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/Components/Pages/Counter.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Db3VudGVyLnJhem9y
+
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/Components/Pages/Error.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9FcnJvci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/Components/Pages/Home.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Ib21lLnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/Components/Pages/SignUp.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9TaWduVXAucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/Components/Pages/Weather.razor]
@@ -60,6 +54,4 @@ build_metadata.AdditionalFiles.CssScope = b-4f07h5ih1l
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvTmF2TWVudS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = b-j6v92ebyk4
 
-[/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/Components/Pages/Login.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Mb2dpbi5yYXpvcg==
-build_metadata.AdditionalFiles.CssScope = b-s3t9qi7m1a
+
