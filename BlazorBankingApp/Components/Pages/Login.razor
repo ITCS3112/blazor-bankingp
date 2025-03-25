@@ -1,9 +1,11 @@
 @page "/"
 @rendermode InteractiveServer
 @using Supabase
-@inject Supabase.Client SupabaseClient
 @using Npgsql
+@inject Services.SupabaseService SupabaseService
+@inject Services.UserService UserService
 @inject NavigationManager NavigationManager
+
 <div class="login-container">
     <h1 class="text-center mb-4">Welcome to Charlotte's Banking App</h1>
 
@@ -17,8 +19,7 @@
 
         <div class="mb-3">
             <label for="password" class="form-label">Password</label>
-            <input @bind="password" id="password" type="password" class="form-control"
-                placeholder="Enter your password" />
+            <input @bind="password" id="password" type="password" class="form-control" placeholder="Enter your password" />
         </div>
 
         <button @onclick="login" class="btn btn-primary w-100">Login</button>
@@ -29,8 +30,7 @@
         }
 
         <div class="mt-3 text-center">
-            <button style="color: white;" @onclick="@(() => NavigationManager.NavigateTo("/signup"))"
-                class="create-account btn w-33">Create Account</button>
+            <button style="color: white;" @onclick="@(() => NavigationManager.NavigateTo("/signup"))" class="create-account btn w-33">Create Account</button>
         </div>
     </div>
 </div>
@@ -61,88 +61,34 @@
 
     private async Task login()
     {
-        // Load environment variables from .env file
-        DotNetEnv.Env.Load();
-
-        // Debug: Print the SUPABASE_URL to verify it is loaded
-        Console.WriteLine($"SUPABASE_URL: {Environment.GetEnvironmentVariable("SUPABASE_URL")}");
-
-        // Fetch Supabase credentials from environment variables
-        var url = Environment.GetEnvironmentVariable("SUPABASE_URL")?.Trim() ?? throw new InvalidOperationException("SUPABASE_URL environment variable is not set.");
-        var key = Environment.GetEnvironmentVariable("SUPABASE_SERVICE_KEY")?.Trim() ?? throw new InvalidOperationException("SUPABASE_SERVICE_KEY environment variable is not set.");
-
-        // PostgreSQL connection string for Supabase database
-        string databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
-            ?? throw new InvalidOperationException("DATABASE_URL environment variable is not set.");
-
-        // Convert the URI to a standard connection string
-        var uri = new Uri(databaseUrl);
-        var userInfo = uri.UserInfo.Split(':');
-        string connectionString = $"Host=aws-0-us-east-1.pooler.supabase.com;Port=5432;Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SslMode=Require;Trust Server Certificate=true;";
-        // Initialize Supabase Client
-        var options = new SupabaseOptions { AutoConnectRealtime = true };
-        var supabase = new Client(url, key, options);
-
-
         try
         {
-            await supabase.InitializeAsync();
-            Console.WriteLine("Connected to Supabase successfully!");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to initialize Supabase client: {ex.Message}");
-            return; // Exit if Supabase fails to connect
-        }
+            var supabase = SupabaseService.GetClient();
 
-        // Connect to PostgreSQL inside Supabase
-        try
-        {
-            using (var conn = new NpgsqlConnection(connectionString))
-            {
-                await conn.OpenAsync();
-                Console.WriteLine("Connected to Supabase PostgreSQL successfully!");
-
-                // Test Query
-                using (var cmd = new NpgsqlCommand("SELECT NOW()", conn))
-                {
-                    var result = await cmd.ExecuteScalarAsync();
-                    Console.WriteLine($"Database time: {result}");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Database connection failed: {ex.Message}");
-            return;
-        }
-        try
-        {
+            // Trim inputs
             email = email?.Trim();
             password = password?.Trim();
 
             Console.WriteLine($"Attempting login with email: {email}");
-            var response = await SupabaseClient.Auth.SignIn(email, password);
 
-            if (response != null)
+            var response = await supabase.Auth.SignIn(email, password);
+
+            if (response?.User != null)
             {
-                Console.WriteLine($"Response received: {response}");
-                if (response.User != null)
-                {
-                    loginMessage = "Login successful!";
-                    Console.WriteLine("User logged in: " + response.User.Email);
-                    NavigationManager.NavigateTo("/home");
-                }
-                else
-                {
-                    loginMessage = "Invalid email or password.";
-                    Console.WriteLine("Login failed: Invalid email or password.");
-                }
+                loginMessage = "Login successful!";
+                Console.WriteLine("User logged in: " + response.User.Email);
+
+                // Store user info in UserService for access across pages
+                UserService.id = response.User.Id;
+                UserService.email = response.User.Email;
+                UserService.authoritylevel = response.User.Role ?? "user";  // Assuming "user" as default role
+
+                NavigationManager.NavigateTo("/home");
             }
             else
             {
-                loginMessage = "No response received from Supabase.";
-                Console.WriteLine("No response received from Supabase.");
+                loginMessage = "Invalid email or password.";
+                Console.WriteLine("Login failed: Invalid email or password.");
             }
         }
         catch (Exception ex)
