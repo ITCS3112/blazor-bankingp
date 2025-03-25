@@ -1,6 +1,8 @@
 @page "/"
 @rendermode InteractiveServer
+@using Supabase
 @inject Supabase.Client SupabaseClient
+@using Npgsql
 @inject NavigationManager NavigationManager
 <div class="login-container">
     <h1 class="text-center mb-4">Welcome to Charlotte's Banking App</h1>
@@ -59,24 +61,89 @@
 
     private async Task login()
     {
+        // Load environment variables from .env file
+        DotNetEnv.Env.Load();
+
+        // Debug: Print the SUPABASE_URL to verify it is loaded
+        Console.WriteLine($"SUPABASE_URL: {Environment.GetEnvironmentVariable("SUPABASE_URL")}");
+
+        // Fetch Supabase credentials from environment variables
+        var url = Environment.GetEnvironmentVariable("SUPABASE_URL")?.Trim() ?? throw new InvalidOperationException("SUPABASE_URL environment variable is not set.");
+        var key = Environment.GetEnvironmentVariable("SUPABASE_SERVICE_KEY")?.Trim() ?? throw new InvalidOperationException("SUPABASE_SERVICE_KEY environment variable is not set.");
+
+        // PostgreSQL connection string for Supabase database
+        string databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
+            ?? throw new InvalidOperationException("DATABASE_URL environment variable is not set.");
+
+        // Convert the URI to a standard connection string
+        var uri = new Uri(databaseUrl);
+        var userInfo = uri.UserInfo.Split(':');
+        string connectionString = $"Host=aws-0-us-east-1.pooler.supabase.com;Port=5432;Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SslMode=Require;Trust Server Certificate=true;";
+        // Initialize Supabase Client
+        var options = new SupabaseOptions { AutoConnectRealtime = true };
+        var supabase = new Client(url, key, options);
+
 
         try
         {
+            await supabase.InitializeAsync();
+            Console.WriteLine("Connected to Supabase successfully!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to initialize Supabase client: {ex.Message}");
+            return; // Exit if Supabase fails to connect
+        }
+
+        // Connect to PostgreSQL inside Supabase
+        try
+        {
+            using (var conn = new NpgsqlConnection(connectionString))
+            {
+                await conn.OpenAsync();
+                Console.WriteLine("Connected to Supabase PostgreSQL successfully!");
+
+                // Test Query
+                using (var cmd = new NpgsqlCommand("SELECT NOW()", conn))
+                {
+                    var result = await cmd.ExecuteScalarAsync();
+                    Console.WriteLine($"Database time: {result}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Database connection failed: {ex.Message}");
+            return;
+        }
+        try
+        {
+            email = email?.Trim();
+            password = password?.Trim();
+
+            Console.WriteLine($"Attempting login with email: {email}");
             var response = await SupabaseClient.Auth.SignIn(email, password);
 
-            if (response.User != null)
+            if (response != null)
             {
-                loginMessage = "Login successful!";
-                Console.WriteLine("User logged in: " + response.User.Email);
-                Console.WriteLine("Navigating to /home...");
-                NavigationManager.NavigateTo("/home");
+                Console.WriteLine($"Response received: {response}");
+                if (response.User != null)
+                {
+                    loginMessage = "Login successful!";
+                    Console.WriteLine("User logged in: " + response.User.Email);
+                    NavigationManager.NavigateTo("/home");
+                }
+                else
+                {
+                    loginMessage = "Invalid email or password.";
+                    Console.WriteLine("Login failed: Invalid email or password.");
+                }
             }
             else
             {
-                loginMessage = "Invalid email or password.";
+                loginMessage = "No response received from Supabase.";
+                Console.WriteLine("No response received from Supabase.");
             }
-
-            
         }
         catch (Exception ex)
         {
