@@ -36,10 +36,6 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xFcnJvci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/junio/OneDrive/Documents/Coding/blazor-bankingp/BlazorBankingApp/Components/Pages/Login.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xMb2dpbi5yYXpvcg==
-build_metadata.AdditionalFiles.CssScope = 
-
 [C:/Users/junio/OneDrive/Documents/Coding/blazor-bankingp/BlazorBankingApp/Components/Pages/SignUp.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTaWduVXAucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
@@ -67,3 +63,7 @@ build_metadata.AdditionalFiles.CssScope = b-jkapa7a945
 [C:/Users/junio/OneDrive/Documents/Coding/blazor-bankingp/BlazorBankingApp/Components/Pages/Home.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIb21lLnJhem9y
 build_metadata.AdditionalFiles.CssScope = b-w9itypit3h
+
+[C:/Users/junio/OneDrive/Documents/Coding/blazor-bankingp/BlazorBankingApp/Components/Pages/Login.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xMb2dpbi5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = b-ldh71kwq9l
