@@ -1,6 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager Navigation
-@inject Supabase.Client SupabaseClient
+@inject Services.SupabaseService SupabaseService
 
 <div class="page">
     <div class="sidebar @(IsHomePage ? "no-background" : "")">
@@ -38,5 +38,5 @@
 @code {
     private bool IsHomePage => Navigation.Uri.EndsWith("/");
 
-    private string Email => SupabaseClient.Auth.CurrentSession?.User?.Email?.ToString() ?? string.Empty;
+    private string Email => SupabaseService.GetClient().Auth.CurrentSession?.User?.Email?.ToString() ?? string.Empty;
 }

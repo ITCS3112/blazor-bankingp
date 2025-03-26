@@ -32,7 +32,7 @@
     private bool IsLoading { get; set; }
     private string ErrorMessage { get; set; } = string.Empty;
 
-    private string Email => SupabaseClient.Auth.CurrentSession?.User?.Email?.ToString() ?? string.Empty;
+    private string Email => SupabaseService.GetClient().Auth.CurrentSession?.User?.Email?.ToString() ?? string.Empty;
     protected override async Task OnInitializedAsync()
     {
         await FetchBalance();
@@ -57,7 +57,7 @@
             IsLoading = true;
 
             // Get the current user's session
-            var session = SupabaseClient.Auth.CurrentSession;
+            var session = SupabaseService.GetClient().Auth.CurrentSession;
 
             if (session?.User == null)
             {
@@ -78,8 +78,8 @@
 
             // Query the balance table for the current user's balance
             var userId = session.User.Id; // Assuming the user ID is used to identify the user in the database
-            var response = await SupabaseClient
-            .From<bankusers>() // Replace "balances" with your actual table name
+            var response = await SupabaseService
+            .GetClient().From<bankusers>() // Access the Supabase client and call From
             .Select("balance")
             .Filter("id", Operator.Equals, session.User.Id) // Use "Filter" with Operator.Equals for compatibility
             .Single();
