@@ -95,14 +95,24 @@ main.home-page {
     text-align: center;
 }
 .layout-image-container {
-    display: flex;
-    justify-content: center;
-    margin: 20px 0;
+    position: absolute;
+    bottom: 20px;
+    right: 20px
 }
 
 .layout-logo {
     width: 150px; /* Adjust the width as needed */
     height: auto; /* Maintain the aspect ratio */
+    opacity: 0.5;
+}
+.username {
+    font-size: 1.2em;
+    color: #fff;
+    margin-right: 40rem; /* Adjust spacing between username and other elements */
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden; /* Prevent text overflow */
+    text-overflow: ellipsis; /* Add ellipsis if the text is too long */
+    margin-left: 0px;
 }
 
 #blazor-error-ui {

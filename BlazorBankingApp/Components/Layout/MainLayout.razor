@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager Navigation
+@inject Supabase.Client SupabaseClient
 
 <div class="page">
     <div class="sidebar @(IsHomePage ? "no-background" : "")">
@@ -12,6 +13,9 @@
     <main>
         @if (!IsHomePage) {
             <div class="top-row px-4">
+                @if (!string.IsNullOrEmpty(Email)) {
+                    <span class="username">Welcome, @Email</span>
+                }
                 <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">Logout</a>
                 <a href="/about" target="_blank">About</a>
             </div>
@@ -33,4 +37,6 @@
 </div>
 @code {
     private bool IsHomePage => Navigation.Uri.EndsWith("/");
+
+    private string Email => SupabaseClient.Auth.CurrentSession?.User?.Email?.ToString() ?? string.Empty;
 }

@@ -3,9 +3,11 @@
     min-height: 50vh; 
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+    align-items: flex-start; /* Align items to the left */
+    justify-content: flex-start; /* Align content to the top */
+    text-align: left; /* Align text to the left */
+    padding-left: 20px; /* Add padding to create space from the left edge */
+    font-size: large;
 } 
 
 .home-page-logo {

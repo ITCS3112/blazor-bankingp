@@ -3,22 +3,105 @@
 @inject Services.SupabaseService SupabaseService
 @inject Services.UserService UserService
 @inject NavigationManager Navigation
+@using Supabase;
+@using Supabase.Postgrest.Models;
+@using static Supabase.Postgrest.Constants;
+@using Supabase.Postgrest.Extensions;
 
 
 <PageTitle>Home</PageTitle>
 <div class="home-page-background">
+    <p>
+        <strong>Balance: @(Balance.ToString("C2")) </strong>
+    </p>
+
+    @if (IsLoading)
+    {
+        <p>Loading...</p>
+    }
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <p style="color: red;">@ErrorMessage</p>
+    }
 
 </div>
+@using System.Text.Json.Serialization
 @code {
-    private void GoToLogin()
+
+    private decimal Balance { get; set; }
+    private bool IsLoading { get; set; }
+    private string ErrorMessage { get; set; } = string.Empty;
+
+    private string Email => SupabaseClient.Auth.CurrentSession?.User?.Email?.ToString() ?? string.Empty;
+    protected override async Task OnInitializedAsync()
     {
-        Navigation.NavigateTo("/login");
+        await FetchBalance();
+    }
+    public class bankusers : BaseModel
+    {
+        [JsonPropertyName("id")]
+        public Guid Id { get; set; }
+
+        [JsonPropertyName("balance")]
+        public decimal Balance { get; set; }
+
+        public static string TableName => "bankusers";
+
     }
 
 
-    private void GoToSignUp()
+    private async Task FetchBalance()
     {
-        Navigation.NavigateTo("/signup");
+        try
+        {
+            IsLoading = true;
+
+            // Get the current user's session
+            var session = SupabaseClient.Auth.CurrentSession;
+
+            if (session?.User == null)
+            {
+                ErrorMessage = "User is not logged in.";
+                return;
+            }
+            else
+            {
+                Console.WriteLine($"Logged in user ID: {session.User.Id}"); // Log user ID for debugging
+            }
+
+            if (session?.User == null)
+            {
+                ErrorMessage = "User is not logged in.";
+                return;
+            }
+
+
+            // Query the balance table for the current user's balance
+            var userId = session.User.Id; // Assuming the user ID is used to identify the user in the database
+            var response = await SupabaseClient
+            .From<bankusers>() // Replace "balances" with your actual table name
+            .Select("balance")
+            .Filter("id", Operator.Equals, session.User.Id) // Use "Filter" with Operator.Equals for compatibility
+            .Single();
+
+            if (response != null)
+            {
+                Balance = response.Balance; // Assuming the column is named "balance"
+            }
+            else
+            {
+                //ErrorMessage = "Balance not found.";
+                Console.WriteLine($"Error: {ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error fetching balance: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged(); // Ensure the UI updates after fetching data
+        }
     }
 }
-

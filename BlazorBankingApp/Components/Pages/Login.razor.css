@@ -1,0 +1,28 @@
+.layout-container {
+    display: flex; /* Use flexbox to align the logo and login form side by side */
+    justify-content: center; /* Center the entire layout horizontally */
+    align-items: center; /* Align the logo and login form vertically */
+    gap: 20px; /* Add space between the logo and the login form */
+    padding: 20px; /* Add padding around the container */
+}
+
+.layout-image-container {
+    display: flex;
+    justify-content: center; /* Center the logo horizontally within its container */
+    align-items: center; /* Center the logo vertically within its container */
+}
+
+.layout-logo {
+    width: 400x; /* Adjust the width of the logo */
+    height: auto; /* Maintain the aspect ratio */
+    opacity: 0.8; /* Slight transparency for the logo */
+}
+
+.card {
+    max-width: 500px; /* Limit the width of the login form */
+    background: #49269a;
+    color: white;
+    text-align: center;
+    border-radius: 8px; /* Rounded corners for the login form */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+}
