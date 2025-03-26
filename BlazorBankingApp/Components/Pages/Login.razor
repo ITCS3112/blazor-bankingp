@@ -1,7 +1,11 @@
 @page "/"
 @rendermode InteractiveServer
-@inject Supabase.Client SupabaseClient
+@using Supabase
+@using Npgsql
+@inject Services.SupabaseService SupabaseService
+@inject Services.UserService UserService
 @inject NavigationManager NavigationManager
+
 
 <div class="layout-container">
     <div class="layout-image-container">
@@ -18,8 +22,7 @@
 
         <div class="mb-3">
             <label for="password" class="form-label">Password</label>
-            <input @bind="password" id="password" type="password" class="form-control"
-                placeholder="Enter your password" />
+            <input @bind="password" id="password" type="password" class="form-control" placeholder="Enter your password" />
         </div>
 
         <button @onclick="login" class="btn btn-primary w-100">Login</button>
@@ -30,8 +33,7 @@
         }
 
         <div class="mt-3 text-center">
-            <button style="color: white;" @onclick="@(() => NavigationManager.NavigateTo("/signup"))"
-                class="create-account btn w-33">Create Account</button>
+            <button style="color: white;" @onclick="@(() => NavigationManager.NavigateTo("/signup"))" class="create-account btn w-33">Create Account</button>
         </div>
     </div>
 </div>
@@ -62,23 +64,35 @@
 
     private async Task login()
     {
-
         try
         {
-            var response = await SupabaseClient.Auth.SignIn(email, password);
+            var supabase = SupabaseService.GetClient();
 
-            if (response.User != null)
+            // Trim inputs
+            email = email?.Trim();
+            password = password?.Trim();
+
+            Console.WriteLine($"Attempting login with email: {email}");
+
+            var response = await supabase.Auth.SignIn(email, password);
+
+            if (response?.User != null)
             {
                 loginMessage = "Login successful!";
                 Console.WriteLine("User logged in: " + response.User.Email);
-                Console.WriteLine("Navigating to /home...");
+
+                // Store user info in UserService for access across pages
+                UserService.id = response.User.Id;
+                UserService.email = response.User.Email;
+                UserService.authoritylevel = response.User.Role ?? "user";  // Assuming "user" as default role
+
                 NavigationManager.NavigateTo("/home");
             }
             else
             {
                 loginMessage = "Invalid email or password.";
+                Console.WriteLine("Login failed: Invalid email or password.");
             }
-
 
         }
         catch (Exception ex)
