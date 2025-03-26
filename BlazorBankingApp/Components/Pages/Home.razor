@@ -30,6 +30,8 @@
     private decimal Balance { get; set; }
     private bool IsLoading { get; set; }
     private string ErrorMessage { get; set; } = string.Empty;
+
+    private string Email => SupabaseClient.Auth.CurrentSession?.User?.Email?.ToString() ?? string.Empty;
     protected override async Task OnInitializedAsync()
     {
         await FetchBalance();
