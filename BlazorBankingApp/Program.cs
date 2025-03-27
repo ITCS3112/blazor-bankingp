@@ -185,8 +185,8 @@ namespace BankingSystem
                 {
                     await conn.OpenAsync();
 
-                    var sql = @"INSERT INTO BankUsers (FirstName, LastName, Email, Password, PhoneNumber, Balance, AuthorityLevel) 
-                            VALUES (@FirstName, @LastName, @Email, @Password, @PhoneNumber, @Balance, @AuthorityLevel)
+                    var sql = @"INSERT INTO auth.users (UID, Display_name, Email, Password, Phone) 
+                            VALUES (@FirstName + @LastName, @Email, @Password, @PhoneNumber, @Balance, @AuthorityLevel)
                             RETURNING Id;"; // Returning the newly created user ID
 
                     using (var cmd = new NpgsqlCommand(sql, conn))
