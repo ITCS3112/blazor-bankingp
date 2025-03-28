@@ -45,18 +45,33 @@ public class SupabaseService : IDisposable
     public Supabase.Client GetClient() => _supabaseClient;
     public async Task<Supabase.Gotrue.User?> SignUpUser(string email, string password, string name, string phone)
     {
-        var options = new SignUpOptions
+        try
         {
-            Data = new Dictionary<string, object>
-        {
-            { "name", name },
-            { "phone", phone }
-        }
-        };
+            var options = new SignUpOptions
+            {
+                Data = new Dictionary<string, object?>
+                {
+                    { "name", name },
+                    { "phone", phone }
+                }
+            };
 
-        var authResponse = await _supabaseClient.Auth.SignUp(email, password, options);
-        return authResponse.User;
+            var authResponse = await _supabaseClient.Auth.SignUp(email.Trim(), password, options);
+
+            if (authResponse.User == null)
+            {
+                Console.WriteLine("Signup failed: " + authResponse);
+            }
+
+            return authResponse.User;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error signing up: " + ex.Message);
+            return null;
+        }
     }
+
 
     public NpgsqlConnection GetConnection() => _dbConnection;
 
