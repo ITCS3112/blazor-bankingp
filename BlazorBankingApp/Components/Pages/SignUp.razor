@@ -11,7 +11,7 @@
 
 <PageTitle>Sign Up</PageTitle>
 
-<!--<div class="layout-container">
+<div class="layout-container">
     <div class="layout-image-container">
         <img src="/images/CLT logo white.png" alt="CLT Logo" class="layout-logo" />
     </div>
@@ -36,7 +36,7 @@
                 placeholder="Enter your Password again" />
         </div>
 
-        <
+        
         @if (!string.IsNullOrEmpty(password) && !string.IsNullOrEmpty(confirmedpass) && password != confirmedpass)
         {
             <div class="alert mt-3" style="color: red;">Passwords do not match.</div>
@@ -65,7 +65,7 @@
             <div class="alert mt-3" style="color: red;">@signUpMessage</div>
         }
     </div>
-</div/-->
+</div>
 
 <style>
     .p-4 {
@@ -84,10 +84,18 @@
         background: #8477a3;
         border: rgb(white, blue, #bf00ff);
     }
+
+    .layout-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+    }   
 </style>
 
 @code
-{/*
+{
     private string email;
     private string password;
     private string confirmedpass;
@@ -116,4 +124,4 @@
             return;
         }
     }
-*/}
+}
