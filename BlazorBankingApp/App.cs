@@ -20,6 +20,9 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
 }
+app.Urls.Add("http://CharlotteBanking:5070");
+app.Urls.Remove("http://localhost:5070");
+
 
 app.UseHttpsRedirection();
 app.UseAntiforgery();
