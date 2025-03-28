@@ -2,6 +2,13 @@ namespace BlazorBankingApp.Services;
 
 using Npgsql;
 using Supabase;
+using Supabase.Gotrue;
+using Supabase.Postgrest;
+//using Postgrest.Models;
+//using Postgrest.Responses;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 
 public class UserService
 {
@@ -36,6 +43,21 @@ public class SupabaseService : IDisposable
     }
 
     public Supabase.Client GetClient() => _supabaseClient;
+    public async Task<Supabase.Gotrue.User?> SignUpUser(string email, string password, string name, string phone)
+    {
+        var options = new SignUpOptions
+        {
+            Data = new Dictionary<string, object>
+        {
+            { "name", name },
+            { "phone", phone }
+        }
+        };
+
+        var authResponse = await _supabaseClient.Auth.SignUp(email, password, options);
+        return authResponse.User;
+    }
+
     public NpgsqlConnection GetConnection() => _dbConnection;
 
     public void Dispose()

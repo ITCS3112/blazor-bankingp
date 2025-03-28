@@ -3,13 +3,15 @@
 @rendermode InteractiveServer
 @using Supabase
 @using Npgsql
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
 @inject Services.SupabaseService SupabaseService
 @inject Services.UserService UserService
 @inject NavigationManager NavigationManager
 
 <PageTitle>Sign Up</PageTitle>
 
-<div class="layout-container">
+<!--<div class="layout-container">
     <div class="layout-image-container">
         <img src="/images/CLT logo white.png" alt="CLT Logo" class="layout-logo" />
     </div>
@@ -34,6 +36,7 @@
                 placeholder="Enter your Password again" />
         </div>
 
+        <
         @if (!string.IsNullOrEmpty(password) && !string.IsNullOrEmpty(confirmedpass) && password != confirmedpass)
         {
             <div class="alert mt-3" style="color: red;">Passwords do not match.</div>
@@ -62,7 +65,7 @@
             <div class="alert mt-3" style="color: red;">@signUpMessage</div>
         }
     </div>
-</div>
+</div/-->
 
 <style>
     .p-4 {
@@ -84,7 +87,7 @@
 </style>
 
 @code
-{
+{/*
     private string email;
     private string password;
     private string confirmedpass;
@@ -97,61 +100,20 @@
 
     private async Task signUp()
     {
-        try
-        {
+        try{
             displayname = $"{firstname} {lastname}";
-            var client = SupabaseService.GetClient();
 
-            var signUpOptions = new Supabase.Gotrue.SignUpOptions
+            if (password != confirmedpass)
             {
-                Data = new Dictionary<string, object>
-                {
-                    { "full_name", displayname },
-                    { "phone", phone }
-                }
-            };
-
-            // Corrected SignUp method (No SignUpType, Just email, password, and options)
-            var response = await client.Auth.SignUp(email, password, options: signUpOptions);
-
-            if (response.User != null)
-            {
-                // Ensure user ID is available before inserting
-                string userId = response.User.Id;
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    var bankUser = new BankUser()  // Assuming BankUser is a model class for the bankusers table
-                    {
-                        Id = userId,  // Ensure the ID matches the `auth.users.id`
-                        Balance = 0,  // Default balance
-                        AuthorityLevel = "user"  // Default role
-                    };
-
-                    var insertResponse = await client.From<BankUser>().Insert(bankUser);
-
-                    if (insertResponse != null)
-                    {
-                        // Navigate to home page after successful insertion
-                        NavigationManager.NavigateTo("/");
-                    }
-                    else
-                    {
-                        signUpMessage = "Error inserting bank user.";
-                    }   
-                }
-
-                // Navigate to home page
-                NavigationManager.NavigateTo("/");
+                signUpMessage = "Passwords do not match.";
+                return;
             }
-            else
-            {
-                signUpMessage = "Invalid email or password.";
-            }
+            var user = await SupabaseService.SignUpUser(email, password, displayname, phone);
         }
-        catch (Exception ex)
+        catch
         {
-            signUpMessage = $"Error: {ex.Message}";
+            signUpMessage = "An error occurred during sign up. Please try again.";
+            return;
         }
     }
-
-}
+*/}
