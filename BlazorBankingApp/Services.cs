@@ -15,7 +15,61 @@ public class UserService
     public string? id { get; set; }
     public string? email { get; set; }
     public string? authoritylevel { get; set; }
+    public string? name { get; set; }
+    public string? phone { get; set; }
+    public string? password { get; set; }
+    public float balance { get; set; }
+
+    private readonly Supabase.Client _supabaseClient;
+
+    public BankUser? CurrentBankUser { get; private set; }
+
+    public UserService(Supabase.Client supabaseClient)
+    {
+        _supabaseClient = supabaseClient;
+    }
+
+    public async Task LoadBankUser()
+    {
+        CurrentBankUser = await GetBankUserData();
+        SetBankUserData(CurrentBankUser);
+    }
+
+    private async Task<(Supabase.Gotrue.User?, BankUser?)> GetFullUserData()
+    {
+        var session = _supabaseClient.Auth.CurrentSession;
+        if (session == null) throw new InvalidOperationException("No active session found.");
+        var user = await _supabaseClient.Auth.GetUser(session.AccessToken);
+        if (user == null) return (null, null);
+
+        // Extract metadata
+        var name = user.UserMetadata.ContainsKey("name") ? user.UserMetadata["name"]?.ToString() : "Unknown";
+        var phone = user.UserMetadata.ContainsKey("phone") ? user.UserMetadata["phone"]?.ToString() : "Unknown";
+
+        var bankUser = await _supabaseClient
+            .From<BankUser>()
+            .Select("*")
+            .Filter("id", Postgrest.Constants.Operator.Equals, user.Id)
+            .Single();
+
+        Console.WriteLine($"User: {user.Email}, Name: {name}, Phone: {phone}, Balance: {bankUser?.Balance}");
+
+        return (user, bankUser);
+    }
+
+    private async void SetBankUserData(BankUser bankUser)
+    {
+        if (bankUser == null) return;
+
+        id = bankUser.Id;
+        authoritylevel = bankUser.AuthorityLevel;
+        balance = (float)bankUser.Balance;
+
+        CurrentBankUser = bankUser;
+    }
+
 }
+
 
 public class SupabaseService : IDisposable
 {
