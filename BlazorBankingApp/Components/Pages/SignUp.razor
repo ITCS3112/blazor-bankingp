@@ -120,6 +120,7 @@
                 return;
             }
             var user = await SupabaseService.SignUpUser(email, password, displayname, phone);
+
             Console.WriteLine($"User created: {user?.Email}");
             if (user != null)
             {
