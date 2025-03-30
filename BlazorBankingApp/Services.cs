@@ -22,7 +22,7 @@ public class UserService
 
     private readonly Supabase.Client _supabaseClient;
 
-    public BankUser? CurrentBankUser { get; private set; }
+    public Supabase.Gotrue.User? CurrentUser { get; private set; }
 
     public UserService(Supabase.Client supabaseClient)
     {
@@ -31,8 +31,24 @@ public class UserService
 
     public async Task LoadBankUser()
     {
-        CurrentBankUser = await GetBankUserData();
-        SetBankUserData(CurrentBankUser);
+        // Load the full user data from Supabase
+        var (user, bankUser) = await GetFullUserData();
+        if (user == null || bankUser == null)
+        {
+            Console.WriteLine("Failed to load user data.");
+            return;
+        }
+
+        // Set properties based on retrieved data
+        id = user.Id;
+        email = user.Email;
+        name = user.UserMetadata.ContainsKey("name") ? user.UserMetadata["name"]?.ToString() : "Unknown";
+        phone = user.UserMetadata.ContainsKey("phone") ? user.UserMetadata["phone"]?.ToString() : "Unknown";
+        balance = (float)bankUser.Balance;
+        authoritylevel = bankUser.AuthorityLevel;
+
+        CurrentUser = user;
+        Console.WriteLine($"Loaded user: {email}, Name: {name}, Phone: {phone}, Balance: {balance}, Authority Level: {authoritylevel}");
     }
 
     private async Task<(Supabase.Gotrue.User?, BankUser?)> GetFullUserData()
@@ -49,7 +65,7 @@ public class UserService
         var bankUser = await _supabaseClient
             .From<BankUser>()
             .Select("*")
-            .Filter("id", Postgrest.Constants.Operator.Equals, user.Id)
+            .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, user.Id)
             .Single();
 
         Console.WriteLine($"User: {user.Email}, Name: {name}, Phone: {phone}, Balance: {bankUser?.Balance}");
@@ -57,17 +73,20 @@ public class UserService
         return (user, bankUser);
     }
 
-    private async void SetBankUserData(BankUser bankUser)
-    {
-        if (bankUser == null) return;
+    private async Task GetBankUserData(){
+        var (user, bankUser) = await GetFullUserData();
+        if (user == null || bankUser == null)
+        {
+            Console.WriteLine("Failed to retrieve user data.");
+            return;
+        }
 
-        id = bankUser.Id;
-        authoritylevel = bankUser.AuthorityLevel;
+        // Set properties based on retrieved data
+        id = user.Id;
         balance = (float)bankUser.Balance;
+        authoritylevel = bankUser.AuthorityLevel;
 
-        CurrentBankUser = bankUser;
     }
-
 }
 
 

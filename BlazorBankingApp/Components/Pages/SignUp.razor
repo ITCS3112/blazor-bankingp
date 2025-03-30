@@ -117,6 +117,7 @@
                 return;
             }
             var user = await SupabaseService.SignUpUser(email, password, displayname, phone);
+            NavigationManager.NavigateTo("/home"); // Redirect to home after successful sign up
         }
         catch
         {
