@@ -70,6 +70,7 @@
 <style>
     .p-4 {
         max-width: 400px;
+    using System.Diagnostics.CodeAnalysis;
         margin: 50px auto;
         background: #49269a;
         color: white;
@@ -105,6 +106,8 @@
     private string phone;
     private string signUpMessage = string.Empty;
 
+    private bool success;
+
 
     private async Task signUp()
     {
@@ -117,12 +120,29 @@
                 return;
             }
             var user = await SupabaseService.SignUpUser(email, password, displayname, phone);
-            NavigationManager.NavigateTo("/"); // Redirect to login after successful sign up
+
+            Console.WriteLine($"User created: {user?.Email}");
+            if (user != null)
+            {
+                var currentSession = await SupabaseService.GetClient().Auth.SignIn(email, password);
+                success = true;
+            }
+            else
+            {
+                signUpMessage = "Sign up failed. Please try again.";
+                return;
+            }
         }
-        catch
+        catch (Exception ex)
         {
             signUpMessage = "An error occurred during sign up. Please try again.";
+            Console.WriteLine($"Sign up error: {ex.Message}");
             return;
+        }
+
+        if (success)
+        {
+            NavigationManager.NavigateTo("/home", true);
         }
     }
 }
