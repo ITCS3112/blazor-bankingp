@@ -73,19 +73,17 @@ public class UserService
         return (user, bankUser);
     }
 
-    private async Task GetBankUserData(){
+    public async Task<BankUser?> GetBankUserData()
+    {
         var (user, bankUser) = await GetFullUserData();
         if (user == null || bankUser == null)
         {
             Console.WriteLine("Failed to retrieve user data.");
-            return;
+            return null;
         }
 
-        // Set properties based on retrieved data
-        id = user.Id;
-        balance = (float)bankUser.Balance;
-        authoritylevel = bankUser.AuthorityLevel;
-
+        // Return the BankUser object
+        return bankUser;
     }
 }
 
