@@ -89,6 +89,7 @@
                 UserService.id = response.User.Id;
                 UserService.email = response.User.Email;
                 UserService.authoritylevel = response.User.Role ?? "user";  // Assuming "user" as default role
+                await SupabaseService.SaveSession();
 
                 NavigationManager.NavigateTo("/home");
             }

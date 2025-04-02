@@ -26,29 +26,23 @@
 
 </div>
 @using System.Text.Json.Serialization
-@code {
 
+@code {
     private decimal Balance { get; set; }
     private bool IsLoading { get; set; }
     private string ErrorMessage { get; set; } = string.Empty;
 
-    private string Email => SupabaseService.GetClient().Auth.CurrentSession?.User?.Email?.ToString() ?? string.Empty;
     protected override async Task OnInitializedAsync()
     {
+        var session = SupabaseService.GetClient().Auth.CurrentSession;
+        if (session == null)
+        {
+            ErrorMessage = "Please log in to view your balance.";
+            return;
+        }
+
         await FetchBalance();
     }
-    public class bankusers : BaseModel
-    {
-        [JsonPropertyName("id")]
-        public Guid Id { get; set; }
-
-        [JsonPropertyName("balance")]
-        public decimal Balance { get; set; }
-
-        public static string TableName => "bankusers";
-
-    }
-
 
     private async Task FetchBalance()
     {
@@ -56,42 +50,21 @@
         {
             IsLoading = true;
 
-            // Get the current user's session
             var session = SupabaseService.GetClient().Auth.CurrentSession;
-
-            if (session?.User == null)
+            if (session == null)
             {
-                ErrorMessage = "User is not logged in.";
-                return;
-            }
-            else
-            {
-                Console.WriteLine($"Logged in user ID: {session.User.Id}"); // Log user ID for debugging
-            }
-
-            if (session?.User == null)
-            {
-                ErrorMessage = "User is not logged in.";
+                ErrorMessage = "User session is not available. Please log in again.";
                 return;
             }
 
-
-            // Query the balance table for the current user's balance
-            var userId = session.User.Id; // Assuming the user ID is used to identify the user in the database
-            var response = await SupabaseService
-            .GetClient().From<bankusers>() // Access the Supabase client and call From
-            .Select("balance")
-            .Filter("id", Operator.Equals, session.User.Id) // Use "Filter" with Operator.Equals for compatibility
-            .Single();
-
-            if (response != null)
+            var bankUser = await UserService.GetBankUserData();
+            if (bankUser != null)
             {
-                Balance = response.Balance; // Assuming the column is named "balance"
+                Balance = bankUser.Balance;
             }
             else
             {
-                //ErrorMessage = "Balance not found.";
-                Console.WriteLine($"Error: {ErrorMessage}");
+                ErrorMessage = "Balance not found.";
             }
         }
         catch (Exception ex)
@@ -101,7 +74,8 @@
         finally
         {
             IsLoading = false;
-            StateHasChanged(); // Ensure the UI updates after fetching data
+            StateHasChanged();
         }
     }
+
 }
