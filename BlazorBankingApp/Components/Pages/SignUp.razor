@@ -36,7 +36,7 @@
                 placeholder="Enter your Password again" />
         </div>
 
-        
+
         @if (!string.IsNullOrEmpty(password) && !string.IsNullOrEmpty(confirmedpass) && password != confirmedpass)
         {
             <div class="alert mt-3" style="color: red;">Passwords do not match.</div>
@@ -70,7 +70,7 @@
 <style>
     .p-4 {
         max-width: 400px;
-    using System.Diagnostics.CodeAnalysis;
+        using System.Diagnostics.CodeAnalysis;
         margin: 50px auto;
         background: #49269a;
         color: white;
@@ -92,7 +92,7 @@
         flex-direction: row;
         align-items: center;
         justify-content: center;
-    }   
+    }
 </style>
 
 @code
@@ -111,7 +111,8 @@
 
     private async Task signUp()
     {
-        try{
+        try
+        {
             displayname = $"{firstname} {lastname}";
 
             if (password != confirmedpass)

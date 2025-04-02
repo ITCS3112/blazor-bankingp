@@ -8,21 +8,23 @@ using Supabase.Postgrest;
 //using Postgrest.Responses;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System;
+using System.Text.Json;
+
+
 
 
 public class UserService
 {
+    private readonly Supabase.Client _supabaseClient;
+    public Supabase.Gotrue.User? CurrentUser { get; private set; }
+
     public string? id { get; set; }
     public string? email { get; set; }
     public string? authoritylevel { get; set; }
     public string? name { get; set; }
     public string? phone { get; set; }
-    public string? password { get; set; }
     public float balance { get; set; }
-
-    private readonly Supabase.Client _supabaseClient;
-
-    public Supabase.Gotrue.User? CurrentUser { get; private set; }
 
     public UserService(Supabase.Client supabaseClient)
     {
@@ -31,7 +33,6 @@ public class UserService
 
     public async Task LoadBankUser()
     {
-        // Load the full user data from Supabase
         var (user, bankUser) = await GetFullUserData();
         if (user == null || bankUser == null)
         {
@@ -39,7 +40,6 @@ public class UserService
             return;
         }
 
-        // Set properties based on retrieved data
         id = user.Id;
         email = user.Email;
         name = user.UserMetadata.ContainsKey("name") ? user.UserMetadata["name"]?.ToString() : "Unknown";
@@ -48,47 +48,44 @@ public class UserService
         authoritylevel = bankUser.AuthorityLevel;
 
         CurrentUser = user;
-        Console.WriteLine($"Loaded user: {email}, Name: {name}, Phone: {phone}, Balance: {balance}, Authority Level: {authoritylevel}");
+        Console.WriteLine($"Loaded user: {email}, Balance: {balance}");
     }
 
     private async Task<(Supabase.Gotrue.User?, BankUser?)> GetFullUserData()
     {
         var session = _supabaseClient.Auth.CurrentSession;
-        if (session == null) throw new InvalidOperationException("No active session found.");
-        var user = await _supabaseClient.Auth.GetUser(session.AccessToken);
-        if (user == null) return (null, null);
-
-        // Extract metadata
-        var name = user.UserMetadata.ContainsKey("name") ? user.UserMetadata["name"]?.ToString() : "Unknown";
-        var phone = user.UserMetadata.ContainsKey("phone") ? user.UserMetadata["phone"]?.ToString() : "Unknown";
-
-        var bankUser = await _supabaseClient
-            .From<BankUser>()
-            .Select("*")
-            .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, user.Id)
-            .Single();
-
-        Console.WriteLine($"User: {user.Email}, Name: {name}, Phone: {phone}, Balance: {bankUser?.Balance}");
-
-        return (user, bankUser);
-    }
-
-    private async Task GetBankUserData(){
-        var (user, bankUser) = await GetFullUserData();
-        if (user == null || bankUser == null)
+        if (session == null)
         {
-            Console.WriteLine("Failed to retrieve user data.");
-            return;
+            Console.WriteLine("No active session found.");
+            return (null, null);
         }
 
-        // Set properties based on retrieved data
-        id = user.Id;
-        balance = (float)bankUser.Balance;
-        authoritylevel = bankUser.AuthorityLevel;
+        try
+        {
+            var user = await _supabaseClient.Auth.GetUser(session.AccessToken).ConfigureAwait(false);
+            if (user == null) return (null, null);
 
+            var bankUser = await _supabaseClient
+                .From<BankUser>()
+                .Select("*")
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, user.Id)
+                .Single();
+
+            return (user, bankUser);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user: {ex.Message}");
+            return (null, null);
+        }
+    }
+
+    public async Task<BankUser?> GetBankUserData()
+    {
+        var (user, bankUser) = await GetFullUserData();
+        return bankUser;
     }
 }
-
 
 public class SupabaseService : IDisposable
 {
@@ -97,35 +94,48 @@ public class SupabaseService : IDisposable
 
     public SupabaseService()
     {
-        var url = Environment.GetEnvironmentVariable("SUPABASE_URL")?.Trim() ?? throw new InvalidOperationException("SUPABASE_URL environment variable is not set.");
-        var key = Environment.GetEnvironmentVariable("SUPABASE_SERVICE_KEY")?.Trim() ?? throw new InvalidOperationException("SUPABASE_SERVICE_KEY environment variable is not set.");
-        string databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL") ?? throw new InvalidOperationException("DATABASE_URL environment variable is not set.");
+        var url = Environment.GetEnvironmentVariable("SUPABASE_URL")?.Trim()
+            ?? throw new InvalidOperationException("SUPABASE_URL environment variable is not set.");
+        var key = Environment.GetEnvironmentVariable("SUPABASE_SERVICE_KEY")?.Trim()
+            ?? throw new InvalidOperationException("SUPABASE_SERVICE_KEY environment variable is not set.");
+        var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL") ??
+            throw new InvalidOperationException("DATABASE_URL environment variable is not set.");
 
         var options = new SupabaseOptions { AutoConnectRealtime = true };
         _supabaseClient = new Supabase.Client(url, key, options);
 
-        Task.Run(async () => await _supabaseClient.InitializeAsync()).Wait();
-        Console.WriteLine("Supabase Client initialized.");
+        // 🔹 Restore session at startup
+        Task.Run(async () =>
+        {
+            await _supabaseClient.InitializeAsync();
+            await RestoreSession();
+        }).Wait();
 
+        Console.WriteLine(" Supabase Client initialized.");
+
+        // 🔹 PostgreSQL Database Connection Setup
         var uri = new Uri(databaseUrl);
         var userInfo = uri.UserInfo.Split(':');
         string connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SslMode=Require;Trust Server Certificate=true;";
+
         _dbConnection = new NpgsqlConnection(connectionString);
         _dbConnection.Open();
-        Console.WriteLine("PostgreSQL connection opened.");
+        Console.WriteLine(" PostgreSQL connection opened.");
     }
 
     public Supabase.Client GetClient() => _supabaseClient;
-    public async Task<Supabase.Gotrue.User?> SignUpUser(string email, string password, string name, string phone)
+    public NpgsqlConnection GetConnection() => _dbConnection;
+
+    public async Task<Supabase.Gotrue.User?> SignUpUser(string email, string password, string displayName, string phone)
     {
         try
         {
             var options = new SignUpOptions
             {
-                Data = new Dictionary<string, object?>
+                Data = new Dictionary<string, object>
                 {
-                    { "name", name },
-                    { "phone", phone }
+                    { "name", (object?)displayName },
+                    { "phone", (object?)phone }
                 }
             };
 
@@ -133,26 +143,68 @@ public class SupabaseService : IDisposable
 
             if (authResponse.User == null)
             {
-                Console.WriteLine("Signup failed: " + authResponse);
+                Console.WriteLine(" Signup failed.");
+                return null;
             }
 
+            // 🔹 Save session for persistent login
+            await SaveSession();
+
+            Console.WriteLine($" User signed up successfully: {authResponse.User.Email}");
             return authResponse.User;
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Error signing up: " + ex.Message);
+            Console.WriteLine($" Error signing up: {ex.Message}");
             return null;
         }
     }
 
 
-    public NpgsqlConnection GetConnection() => _dbConnection;
+    // 🔹 Save session manually after login
+    public async Task SaveSession()
+    {
+        var session = _supabaseClient.Auth.CurrentSession;
+        if (session != null)
+        {
+            var sessionJson = JsonSerializer.Serialize(session);
+            await File.WriteAllTextAsync("session.json", sessionJson);
+            Console.WriteLine(" Session saved.");
+        }
+    }
+
+    // 🔹 Restore session manually at startup
+    public async Task RestoreSession()
+    {
+        try
+        {
+            if (File.Exists("session.json"))
+            {
+                var sessionJson = await File.ReadAllTextAsync("session.json");
+                var session = JsonSerializer.Deserialize<Session>(sessionJson);
+
+                if (session != null)
+                {
+                    await _supabaseClient.Auth.SetSession(session.AccessToken, session.RefreshToken);
+                    Console.WriteLine(" Session restored.");
+                }
+            }
+            else
+            {
+                Console.WriteLine(" No saved session found.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($" Failed to restore session: {ex.Message}");
+        }
+    }
 
     public void Dispose()
     {
         _dbConnection?.Close();
         _dbConnection?.Dispose();
-        Console.WriteLine("PostgreSQL connection closed.");
-        Console.WriteLine("Supabase client cleanup completed.");
+        Console.WriteLine(" PostgreSQL connection closed.");
+        Console.WriteLine(" Supabase client cleanup completed.");
     }
 }
