@@ -28,12 +28,12 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9BYm91dC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/Components/Pages/Counter.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Db3VudGVyLnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
-
 [/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/Components/Pages/Error.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9FcnJvci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/Components/Pages/MoneyManagement.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Nb25leU1hbmFnZW1lbnQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/Components/Pages/ResetPassword.razor]
@@ -42,10 +42,6 @@ build_metadata.AdditionalFiles.CssScope =
 
 [/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/Components/Pages/SignUp.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9TaWduVXAucmF6b3I=
-build_metadata.AdditionalFiles.CssScope = 
-
-[/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/Components/Pages/Weather.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9XZWF0aGVyLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/zacharyvogel/Documents/GitHub/blazor-bankingp/BlazorBankingApp/Components/Routes.razor]
