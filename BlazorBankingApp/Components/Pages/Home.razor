@@ -28,7 +28,8 @@
 @using System.Text.Json.Serialization
 
 @code {
-    private decimal Balance { get; set; }
+    private float Balance { get; set; }
+    private string ID => SupabaseService.GetClient().Auth.CurrentSession?.User?.Id?.ToString() ?? string.Empty;
     private bool IsLoading { get; set; }
     private string ErrorMessage { get; set; } = string.Empty;
 
@@ -48,6 +49,7 @@
     {
         try
         {
+            
             IsLoading = true;
 
             var session = SupabaseService.GetClient().Auth.CurrentSession;
@@ -57,10 +59,12 @@
                 return;
             }
 
-            var bankUser = await UserService.GetBankUserData();
+            var bankUser = UserService.CurrentUser;
+                
             if (bankUser != null)
             {
-                Balance = bankUser.Balance;
+                UserService.LoadBankUser();
+                Balance = UserService.balance;
             }
             else
             {
