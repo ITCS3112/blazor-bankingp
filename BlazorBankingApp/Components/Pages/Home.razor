@@ -53,17 +53,21 @@
             IsLoading = true;
 
             var session = SupabaseService.GetClient().Auth.CurrentSession;
+            Console.WriteLine("Error Line 56 Home.razor");
             if (session == null)
             {
                 ErrorMessage = "User session is not available. Please log in again.";
                 return;
             }
-
-            var bankUser = UserService.CurrentUser;
+            else
+            {
+                Console.WriteLine("Session is available.");
+            }
+            
+            BankUser bankUser = await UserService.GetBankUserData();
                 
             if (bankUser != null)
             {
-                UserService.LoadBankUser();
                 Balance = UserService.balance;
             }
             else
@@ -73,7 +77,7 @@
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Error fetching balance: {ex.Message}";
+            ErrorMessage = $"(In Home.razor) Error fetching balance: {ex.Message}";
         }
         finally
         {
