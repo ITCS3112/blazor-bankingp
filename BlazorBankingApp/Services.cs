@@ -10,14 +10,13 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
 using System.Text.Json;
-
-
-
+using System.Runtime.CompilerServices;
 
 public class UserService
 {
     private readonly Supabase.Client _supabaseClient;
-    public Supabase.Gotrue.User? CurrentUser { get; private set; }
+    private SupabaseService _supabaseService;
+    public BankUser CurrentUser;
 
     public string? id { get; set; }
     public string? email { get; set; }
@@ -31,28 +30,28 @@ public class UserService
         _supabaseClient = supabaseClient;
     }
 
-    public async Task LoadBankUser()
+
+    public async Task<BankUser?> LoadBankUser()
     {
-        var (user, bankUser) = await GetFullUserData();
-        if (user == null || bankUser == null)
+        var bankUser = await GetBankUserData();
+        if (bankUser == null)
         {
             Console.WriteLine("Failed to load user data.");
-            return;
+            return null;
         }
 
-        id = user.Id;
-        email = user.Email;
-        name = user.UserMetadata.ContainsKey("name") ? user.UserMetadata["name"]?.ToString() : "Unknown";
-        phone = user.UserMetadata.ContainsKey("phone") ? user.UserMetadata["phone"]?.ToString() : "Unknown";
+        id = bankUser.Id;
         balance = (float)bankUser.Balance;
         authoritylevel = bankUser.AuthorityLevel;
 
-        CurrentUser = user;
+        CurrentUser = bankUser;
         Console.WriteLine($"Loaded user: {email}, Balance: {balance}");
+        return bankUser;
     }
 
     private async Task<(Supabase.Gotrue.User?, BankUser?)> GetFullUserData()
     {
+        _supabaseService.RestoreSession();
         var session = _supabaseClient.Auth.CurrentSession;
         if (session == null)
         {
@@ -82,7 +81,8 @@ public class UserService
 
     public async Task<BankUser?> GetBankUserData()
     {
-        var (user, bankUser) = await GetFullUserData();
+        BankUser bankUser = await LoadBankUser();
+        Console.WriteLine($"Loaded user: {_supabaseClient.Auth.CurrentSession?.User?.Email}Balance: {bankUser?.Balance}");
         return bankUser;
     }
 }
