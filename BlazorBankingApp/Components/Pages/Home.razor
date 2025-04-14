@@ -64,7 +64,7 @@
                 Console.WriteLine("Session is available.");
             }
             
-            UserService.SetBalance();
+            await UserService.SetBalance();
             Balance = UserService.balance;
             
         }
