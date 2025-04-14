@@ -64,21 +64,8 @@
                 Console.WriteLine("Session is available.");
             }
             
-            BankUser bankUser = await SupabaseService.GetClient()
-                .From<BankUser>()
-                .Select("balance")
-                .Filter("id", Operator.Equals, SupabaseService.GetClient().Auth.CurrentSession.User.Id)
-                .Single();
-                
-            if (bankUser == null)
-            {
-                ErrorMessage = "Balance not found.";
-                return;
-            }
-            else
-            {
-                Balance = (float)bankUser.Balance;
-            }
+            UserService.SetBalance();
+            Balance = UserService.balance;
             
         }
         catch (Exception ex)

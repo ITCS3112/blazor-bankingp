@@ -1,0 +1,31 @@
+@page "/loan"
+
+@rendermode InteractiveServer
+@inject Services.SupabaseService SupabaseService
+@inject Services.UserService UserService
+@inject NavigationManager Navigation
+@using Supabase;
+@using Supabase.Postgrest.Models;
+@using static Supabase.Postgrest.Constants;
+@using Supabase.Postgrest.Extensions;
+
+<div class="loan-page-background">
+    <h1>Loan Application</h1>
+
+    @if (IsLoading)
+    {
+        <p>Loading...</p>
+    }
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <p style="color: red;">@ErrorMessage</p>
+    }
+
+    <h3 strong>Check Out Our Loans:</h3>
+</div>
+@code
+{    private string ID => SupabaseService.GetClient().Auth.CurrentSession?.User?.Id?.ToString() ?? string.Empty;
+    private bool IsLoading { get; set; }
+    private string ErrorMessage { get; set; } = string.Empty;
+
+}

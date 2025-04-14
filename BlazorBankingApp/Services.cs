@@ -4,8 +4,6 @@ using Npgsql;
 using Supabase;
 using Supabase.Gotrue;
 using Supabase.Postgrest;
-//using Postgrest.Models;
-//using Postgrest.Responses;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
@@ -84,6 +82,25 @@ public class UserService
         BankUser bankUser = await LoadBankUser();
         Console.WriteLine($"Loaded user: {_supabaseClient.Auth.CurrentSession?.User?.Email}Balance: {bankUser?.Balance}");
         return bankUser;
+    }
+
+    public async Task SetBalance()
+    {
+        using var supabaseService = new SupabaseService();
+        BankUser bankUser = await supabaseService.GetClient()
+                .From<BankUser>()
+                .Select("balance")
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, supabaseService.GetClient().Auth.CurrentSession?.User?.Id ?? throw new InvalidOperationException("User is not authenticated."))
+                .Single();
+
+        if (bankUser != null)
+        {
+            balance = (float)bankUser.Balance;
+        }
+        else
+        {
+            Console.WriteLine("Failed to load user balance.");
+        }
     }
 }
 
