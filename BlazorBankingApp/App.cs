@@ -33,7 +33,7 @@ try
         try
         {
             var user = await supabaseClient.Auth.GetUser(session.AccessToken);
-            Console.WriteLine($" Session refreshed for: {user.Email}");
+            Console.WriteLine($" Session refreshed for: {user?.Email}");
         }
         catch (Exception ex)
         {
