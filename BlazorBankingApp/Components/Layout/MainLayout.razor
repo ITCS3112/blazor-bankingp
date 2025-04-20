@@ -16,13 +16,11 @@
                 @if (!string.IsNullOrEmpty(Email)) {
                     <span class="username">Welcome, @Email</span>
                 }
-                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">Logout</a>
+                <a href="#" @onclick="Logout">Logout</a>
                 <a href="/about" target="_blank">About</a>
             </div>
 
-            <div class="layout-image-container">
-                <img src="/images/CLT logo white.png" alt="CLT Logo" class="layout-logo" />
-            </div>
+            
         }
         <article class="content px-4">
             @Body
@@ -41,4 +39,14 @@
     private bool IsHomePage => Navigation.Uri.EndsWith("/");
 
     private string Email => SupabaseService.GetClient().Auth.CurrentSession?.User?.Email?.ToString() ?? string.Empty;
+
+    private async Task Logout()
+    {
+        try {
+            await SupabaseService.GetClient().Auth.SignOut();
+            Navigation.NavigateTo("/login", true);
+        } catch (Exception ex) {
+            Console.WriteLine($"Error during logout: {ex.Message}");
+        } 
+    }
 }

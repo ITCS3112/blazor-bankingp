@@ -1,4 +1,5 @@
 using BlazorBankingApp.Components;
+using BlazorBankingApp.Service;
 using BlazorBankingApp.Services;  // Import services
 using DotNetEnv;
 
@@ -59,6 +60,7 @@ builder.Services.AddSingleton(supabaseService);
 builder.Services.AddSingleton(supabaseClient);
 builder.Services.AddSingleton<SupabaseService>();
 builder.Services.AddSingleton<UserService>();
+builder.Services.AddSingleton<DataService>();
 
 // Register Blazor Components
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();

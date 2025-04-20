@@ -3,10 +3,12 @@
 @inject Services.SupabaseService SupabaseService
 @inject Services.UserService UserService
 @inject NavigationManager Navigation
+@inject DataService DataService
 @using Supabase;
 @using Supabase.Postgrest.Models;
 @using static Supabase.Postgrest.Constants;
 @using Supabase.Postgrest.Extensions;
+@using BlazorBankingApp.Service;
 
 
 <PageTitle>Home</PageTitle>
@@ -42,10 +44,11 @@
             return;
         }
 
-        await FetchBalance();
+        Balance = await DataService.FetchBalance();
+        //await FetchBalance();
     }
 
-    private async Task FetchBalance()
+    /*private async Task FetchBalance()
     {
         try
         {
@@ -77,6 +80,6 @@
             IsLoading = false;
             StateHasChanged();
         }
-    }
+    }*/
 
 }
