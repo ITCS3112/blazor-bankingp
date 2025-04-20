@@ -109,6 +109,56 @@ public class UserService
             Console.WriteLine("Failed to load user balance.");
         }
     }
+
+    public async Task<bool> AddToBalance(float amountToAdd)
+    {
+        try
+        {
+            var userId = _supabaseClient.Auth.CurrentSession?.User?.Id
+                         ?? throw new InvalidOperationException("User is not authenticated.");
+
+            // Step 1: Get the current user
+            var response = await _supabaseClient
+                .From<BankUser>()
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, userId)
+                .Get();
+
+            var user = response.Models.FirstOrDefault();
+
+            if (user == null)
+            {
+                Console.WriteLine("User not found.");
+                return false;
+            }
+
+            // Step 2: Update the balance
+            user.Balance += (decimal)amountToAdd;
+
+            // Step 3: Push update to Supabase
+            var updateResponse = await _supabaseClient
+                .From<BankUser>()
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, userId)
+                .Update(user);
+
+            if (updateResponse != null && updateResponse.Models.Count > 0)
+            {
+                balance = (float)user.Balance; // Update local cache if needed
+                return true;
+            }
+            else
+            {
+                Console.WriteLine("Update failed.");
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating balance: {ex.Message}");
+            return false;
+        }
+    }
+
+
 }
 
 public class SupabaseService : IDisposable
