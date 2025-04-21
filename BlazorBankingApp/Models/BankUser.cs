@@ -9,7 +9,7 @@ public class BankUser : BaseModel
     public string Id { get; set; }
 
     [System.ComponentModel.DataAnnotations.Schema.Column("balance")]
-    public decimal Balance { get; set; }
+    public decimal balance { get; set; }
 
     [Supabase.Postgrest.Attributes.Column("authoritylevel")]
     public string AuthorityLevel { get; set; }

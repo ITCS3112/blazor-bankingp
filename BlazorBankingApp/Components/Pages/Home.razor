@@ -53,7 +53,6 @@
             IsLoading = true;
 
             var session = SupabaseService.GetClient().Auth.CurrentSession;
-            Console.WriteLine("Error Line 56 Home.razor");
             if (session == null)
             {
                 ErrorMessage = "User session is not available. Please log in again.";

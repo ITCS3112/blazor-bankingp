@@ -23,9 +23,10 @@ public class UserService
     public string? phone { get; set; }
     public float balance { get; set; }
 
-    public UserService(Supabase.Client supabaseClient)
+    public UserService(SupabaseService supabaseService)
     {
-        _supabaseClient = supabaseClient;
+        _supabaseClient = supabaseService.GetClient();
+        
     }
 
 
@@ -39,7 +40,7 @@ public class UserService
         }
 
         id = bankUser.Id;
-        balance = (float)bankUser.Balance;
+        balance = (float)bankUser.balance;
         authoritylevel = bankUser.AuthorityLevel;
 
         CurrentUser = bankUser;
@@ -67,8 +68,10 @@ public class UserService
                 .Select("*")
                 .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, user.Id)
                 .Single();
-
+            
+            
             return (user, bankUser);
+            
         }
         catch (Exception ex)
         {
@@ -80,26 +83,29 @@ public class UserService
     public async Task<BankUser?> GetBankUserData()
     {
         BankUser bankUser = await LoadBankUser();
-        Console.WriteLine($"Loaded user: {_supabaseClient.Auth.CurrentSession?.User?.Email}Balance: {bankUser?.Balance}");
+        Console.WriteLine($"Loaded user: {_supabaseClient.Auth.CurrentSession?.User?.Email}Balance: {bankUser?.balance}");
         return bankUser;
     }
 
     public async Task SetBalance()
     {
-        using var supabaseService = new SupabaseService();
-        BankUser bankUser = await supabaseService.GetClient()
+        try
+        {
+            var userId = _supabaseClient.Auth.CurrentSession?.User?.Id
+                         ?? throw new InvalidOperationException("User is not authenticated.");
+
+            var bankUser = await _supabaseClient
                 .From<BankUser>()
                 .Select("balance")
-                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, supabaseService.GetClient().Auth.CurrentSession?.User?.Id ?? throw new InvalidOperationException("User is not authenticated."))
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, userId)
                 .Single();
 
-        if (bankUser != null)
-        {
-            balance = (float)bankUser.Balance;
+            balance = (float)bankUser.balance;
+            Console.WriteLine($"[SetBalance] User balance loaded: {balance}");
         }
-        else
+        catch (Exception ex)
         {
-            Console.WriteLine("Failed to load user balance.");
+            Console.WriteLine($"[SetBalance] Error: {ex.Message}");
         }
     }
 
@@ -107,27 +113,32 @@ public class UserService
     {
         try
         {
-            var userId = _supabaseClient.Auth.CurrentSession?.User?.Id
-                         ?? throw new InvalidOperationException("User is not authenticated.");
+            var userId = _supabaseClient.Auth.CurrentSession?.User?.Id;
 
-            // Step 1: Get the current user
+            if (string.IsNullOrEmpty(userId))
+            {
+                Console.WriteLine("User is not authenticated. - Services.AddToBalance");
+                return false;
+            }
+
+            Console.WriteLine($"Supabase Auth ID: {userId} - Services.AddToBalance");
+
             var response = await _supabaseClient
                 .From<BankUser>()
                 .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, userId)
                 .Get();
 
-            var user = response.Models.FirstOrDefault();
-
-            if (user == null)
+            if (response.Models == null || !response.Models.Any())
             {
-                Console.WriteLine("User not found.");
+                Console.WriteLine("No user model found for given ID. - Services.AddToBalance");
                 return false;
             }
 
-            // Step 2: Update the balance
-            user.Balance += (decimal)amountToAdd;
+            var user = response.Models.First();
+            Console.WriteLine($"Current balance: {user.balance} - Services.AddToBalance");
 
-            // Step 3: Push update to Supabase
+            user.balance += (decimal)amountToAdd;
+
             var updateResponse = await _supabaseClient
                 .From<BankUser>()
                 .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, userId)
@@ -135,24 +146,25 @@ public class UserService
 
             if (updateResponse != null && updateResponse.Models.Count > 0)
             {
-                balance = (float)user.Balance; // Update local cache if needed
+                Console.WriteLine("Balance update successful. - Services.AddToBalance");
+                balance = (float)user.balance;
                 return true;
             }
             else
             {
-                Console.WriteLine("Update failed.");
+                Console.WriteLine("Balance update failed - update response empty. - Services.AddToBalance");
                 return false;
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error updating balance: {ex.Message}");
+            Console.WriteLine($"Error updating balance: {ex.Message} - Services.AddToBalance");
             return false;
         }
     }
-
-
 }
+
+
 
 public class SupabaseService : IDisposable
 {
@@ -188,6 +200,7 @@ public class SupabaseService : IDisposable
         _dbConnection = new NpgsqlConnection(connectionString);
         _dbConnection.Open();
         Console.WriteLine(" PostgreSQL connection opened.");
+
     }
 
     public Supabase.Client GetClient() => _supabaseClient;
