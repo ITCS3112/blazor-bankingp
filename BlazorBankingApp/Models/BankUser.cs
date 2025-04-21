@@ -19,4 +19,12 @@ public class BankUser : BaseModel
     [Supabase.Postgrest.Attributes.Column("authoritylevel")]
     public string AuthorityLevel { get; set; }
 
+<<<<<<< HEAD
+=======
+    [Supabase.Postgrest.Attributes.Column("name")]
+    public string Name { get; set; }
+
+    [Supabase.Postgrest.Attributes.Column("phone")]
+    public string Phone { get; set; }
+>>>>>>> 26fbc54 (Signup logic and recreating Bankusers mode)
 }

@@ -1,8 +1,13 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager Navigation
 @inject Services.SupabaseService SupabaseService
+<<<<<<< HEAD
 @inject DataService DataService
 @using BlazorBankingApp.Service
+=======
+@inject Services.UserService UserService
+@using BlazorBankingApp.Services
+>>>>>>> 26fbc54 (Signup logic and recreating Bankusers mode)
 
 <div class="page">
     <div class="sidebar @(IsHomePage ? "no-background" : "")">
@@ -18,7 +23,11 @@
                 @if (!string.IsNullOrEmpty(Email)) {
                     <span class="username">Welcome, @Name</span>
                 }
+<<<<<<< HEAD
                 <a href="#" @onclick="Logout">Logout</a>
+=======
+                <a href="/logout" target="_blank">Logout</a>
+>>>>>>> 26fbc54 (Signup logic and recreating Bankusers mode)
                 <a href="/about" target="_blank">About</a>
             </div>
 
@@ -41,6 +50,7 @@
     private bool IsHomePage => Navigation.Uri.EndsWith("/");
 
     private string Email => SupabaseService.GetClient().Auth.CurrentSession?.User?.Email?.ToString() ?? string.Empty;
+<<<<<<< HEAD
     private string Name => SupabaseService.GetClient().Auth.CurrentSession?.User?.UserMetadata?.GetValueOrDefault("name")?.ToString() ?? string.Empty;
 
 
@@ -59,3 +69,8 @@
         } 
     }
 }
+=======
+    private string Name => UserService.name;
+}    
+    
+>>>>>>> 26fbc54 (Signup logic and recreating Bankusers mode)
