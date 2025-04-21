@@ -8,8 +8,13 @@ public class BankUser : BaseModel
     [PrimaryKey("id")]
     public string Id { get; set; }
 
+<<<<<<< HEAD
     [Supabase.Postgrest.Attributes.Column("balance")]
     public decimal Balance { get; set; }
+=======
+    [System.ComponentModel.DataAnnotations.Schema.Column("balance")]
+    public decimal balance { get; set; }
+>>>>>>> eb70c34 (Logout page created, Loan page works)
 
     [Supabase.Postgrest.Attributes.Column("authoritylevel")]
     public string AuthorityLevel { get; set; }
