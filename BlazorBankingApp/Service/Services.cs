@@ -86,7 +86,14 @@ public class UserService
 
     public async Task SetBalance()
     {
+        
         using var supabaseService = new SupabaseService();
+        await supabaseService.RestoreSession();
+        if (supabaseService.GetClient().Auth.CurrentSession == null)
+        {
+            Console.WriteLine("No active session found.");
+            return;
+        }
         BankUser bankUser = await supabaseService.GetClient()
                 .From<BankUser>()
                 .Select("balance")
@@ -147,23 +154,32 @@ public class SupabaseService : IDisposable
     {
         try
         {
+            Console.WriteLine($" Signing up user: {email}");
             var options = new SignUpOptions
             {
                 Data = new Dictionary<string, object>
                 {
-                    { "name", (object?)displayName },
-                    { "phone", (object?)phone }
+                    { "name", (object?)displayName ?? ""},
+                    { "phone", (object?)phone ?? ""}
                 }
             };
 
+            if (_supabaseClient == null)
+            {
+                throw new InvalidOperationException("Supabase client is not initialized.");
+            } else {
+                Console.WriteLine($" Supabase client is initialized {_supabaseClient.ToString}.");
+            }
+            Console.WriteLine($"Email: {email}, Password: {password}, DisplayName: {displayName}, Phone: {phone}");
+
             var authResponse = await _supabaseClient.Auth.SignUp(email.Trim(), password, options);
+            Console.WriteLine("AuthResponse received");
 
             if (authResponse.User == null)
             {
                 Console.WriteLine(" Signup failed.");
                 return null;
             }
-
             // 🔹 Save session for persistent login
             await SaveSession();
 

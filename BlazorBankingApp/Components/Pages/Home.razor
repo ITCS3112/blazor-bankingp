@@ -13,9 +13,17 @@
 
 <PageTitle>Home</PageTitle>
 <div class="home-page-background">
-    <p>
-        <strong>Balance: @(Balance.ToString("C2")) </strong>
-    </p>
+    <div class="balance-container">
+        <p>
+            <strong class="balance-label">Balance:</strong>
+        </p>
+        <p class="balance-amount">@Balance.ToString("C2")</p>
+    </div>
+    <div class="transaction-container">
+        <p>
+            <strong class="transaction-label">Transaction History:</strong>
+        </p>
+    </div>
 
     @if (IsLoading)
     {
@@ -32,6 +40,7 @@
 @code {
     private float Balance { get; set; }
     private string ID => SupabaseService.GetClient().Auth.CurrentSession?.User?.Id?.ToString() ?? string.Empty;
+    private string Name {get; set; } = string.Empty;
     private bool IsLoading { get; set; }
     private string ErrorMessage { get; set; } = string.Empty;
 
@@ -45,6 +54,7 @@
         }
 
         Balance = await DataService.FetchBalance();
+        Name = await DataService.FetchName();
         //await FetchBalance();
     }
 
