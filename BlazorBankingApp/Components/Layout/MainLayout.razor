@@ -43,6 +43,5 @@
     private bool IsHomePage => Navigation.Uri.EndsWith("/");
 
     private string Email => SupabaseService.GetClient().Auth.CurrentSession?.User?.Email?.ToString() ?? string.Empty;
-    private string Name => UserService.name;
-}    
-    
+    private string Name => UserService.GetUserName() ?? "Error Loading Name - MainLayout.razor";
+}

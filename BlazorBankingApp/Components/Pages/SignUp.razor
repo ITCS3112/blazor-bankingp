@@ -58,6 +58,12 @@
             <input @bind="phone" id="phone" type="text" class="form-control" placeholder="Enter your phone number" />
         </div>
 
+        <div class="mb-3">
+            <label for="admincode" class="form-label">Admin Code (optional)</label>
+            <input @bind="admincode" id="admincode" type="text" class="form-control"
+                placeholder="Enter your admin code (if you have one)" />
+        </div>
+
         <button @onclick="signUp" class="btn btn-primary w-100">Create Account</button>
 
         @if (!string.IsNullOrEmpty(signUpMessage))
@@ -105,8 +111,11 @@
     private string displayname;
     private string phone;
     private string signUpMessage = string.Empty;
+    private string admincode;
 
     private bool success;
+    Supabase.Gotrue.User user;
+
 
 
     private async Task signUp()
@@ -120,7 +129,19 @@
                 signUpMessage = "Passwords do not match.";
                 return;
             }
-            var user = await SupabaseService.SignUpUser(email, password, displayname, phone);
+            if(admincode == "4321")
+            {
+                user = await SupabaseService.SignUpUser(email, password, displayname, phone, "admin");
+            }
+            else
+            {
+                user = await SupabaseService.SignUpUser(email, password, displayname, phone, "user");
+            }
+            if (user == null)
+            {
+                signUpMessage = "There was an error creating your account. Please try again. - SignUp";
+                return;
+            }
 
             Console.WriteLine($"User created: {user?.Email}");
             if (user != null)
@@ -145,5 +166,6 @@
         {
             NavigationManager.NavigateTo("/home", true);
         }
+        
     }
 }

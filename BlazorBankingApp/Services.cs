@@ -70,7 +70,7 @@ public class UserService
                 .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, user.Id)
                 .Single();
             return (user, bankUser);
-            
+
         }
         catch (Exception ex)
         {
@@ -161,7 +161,12 @@ public class UserService
             return false;
         }
     }
+    public string GetUserName() => name;
 }
+
+
+
+
 
 
 
@@ -205,42 +210,96 @@ public class SupabaseService : IDisposable
     public Supabase.Client GetClient() => _supabaseClient;
     public NpgsqlConnection GetConnection() => _dbConnection;
 
-    public async Task<Supabase.Gotrue.User?> SignUpUser(string email, string password, string displayName, string phone)
+    public async Task<Supabase.Gotrue.User?> SignUpUser(string email, string password, string displayName, string phone, string authorityLevel)
     {
         try
         {
-            // 🔹 Check if user already exists
-            
-
-            var authResponse = await _supabaseClient.Auth.SignUp(email.Trim(), password);
-
-            // 🔹 Insert new user into auth.users table
-            var user = new BankUser
+            // Optional: store in auth.users metadata
+            var options = new SignUpOptions
             {
-                Name = displayName,
-                Phone = phone
+                Data = new Dictionary<string, object>
+            {
+                { "name", displayName },
+                { "phone", phone },
+                { "authoritylevel", authorityLevel }
+            }
             };
-            var insertedUser = await _supabaseClient.From<BankUser>().Insert(user);
-            
 
+            var authResponse = await _supabaseClient.Auth.SignUp(email.Trim(), password, options);
+
+            // 🔒 Check if user already exists
             if (authResponse.User == null)
             {
-                Console.WriteLine(" Signup failed.");
+                Console.WriteLine("⚠️ Signup failed — user already exists.");
                 return null;
             }
 
-            // 🔹 Save session for persistent login
-            await SaveSession();
+            Console.WriteLine($"✅ User signed up with ID: {authResponse.User.Id}");
 
-            Console.WriteLine($" User signed up successfully: {authResponse.User.Email}");
+            // 🧱 Check if BankUser already exists
+            var existingBankUser = await _supabaseClient
+                .From<BankUser>()
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, authResponse.User.Id)
+                .Single();
+
+            if (existingBankUser != null)
+            {
+                // Update existing BankUser record
+                existingBankUser.Name = displayName;
+                existingBankUser.Phone = phone;
+                existingBankUser.AuthorityLevel = authorityLevel;
+                var updateResponse = await _supabaseClient
+                    .From<BankUser>()
+                    .Upsert(existingBankUser);
+
+                if (updateResponse == null)
+                {
+                    Console.WriteLine("❌ Failed to update existing BankUser.");
+                }
+                else
+                {
+                    Console.WriteLine($"BankUser updated: {existingBankUser.Name}");
+                }
+            }
+            else
+            {
+                // Insert new BankUser record
+                var newBankUser = new BankUser
+                {
+                    Id = authResponse.User.Id,
+                    Name = displayName,
+                    Phone = phone,
+                    AuthorityLevel = authorityLevel,
+                    balance = 1000
+                };
+
+                var insertResponse = await _supabaseClient
+                    .From<BankUser>()
+                    .Insert(newBankUser);
+
+                if (insertResponse != null)
+                {
+                    Console.WriteLine("✅ BankUser inserted successfully.");
+                }
+                else
+                {
+                    Console.WriteLine("❌ Failed to insert BankUser.");
+                }
+            }
+
+            await SaveSession(); // Optional: persist login session
             return authResponse.User;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($" Error signing up: {ex.Message}");
+            Console.WriteLine($"❌ [SignUpUser ERROR] {ex.Message}");
             return null;
         }
     }
+
+
+
+
 
 
     // 🔹 Save session manually after login
