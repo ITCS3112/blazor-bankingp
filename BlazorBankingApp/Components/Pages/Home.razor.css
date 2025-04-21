@@ -56,3 +56,46 @@ button.btn-primary:hover {
     background-color: #0056b3;
     border-color: #004085;
 }
+
+.balance-container {
+    background: #49269a; /* Purple background */
+    color: white; /* White text color */
+    text-align: center; /* Center-align the text */
+    border-radius: 12px; /* Slightly larger rounded corners */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2); /* Slightly larger shadow */
+    padding: 24px; /* Increase padding inside the box */
+    width: 400px; /* Increase the width */
+    height: auto; /* Allow height to adjust dynamically */
+    margin: 20px auto; /* Center the box horizontally */
+    font-size: 1.2em; /* Slightly larger font size for the text */
+}
+
+.balance-amount {
+    font-size: 1.5em; /* Larger font size for the balance */
+    font-weight: bold; /* Make the balance bold */
+    color: #ffffff; /* Green color for the balance */
+}
+
+.balance-label {
+    color: #ffffff; /* Replace with your desired color (e.g., orange) */
+    font-weight: bold; /* Optional: Keep the text bold */
+}
+
+.transaction-container {
+    background: #49269a; /* Purple background */
+    color: white; /* White text color */
+    text-align: center; /* Center-align the text */
+    border-radius: 12px; /* Slightly larger rounded corners */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2); /* Slightly larger shadow */
+    padding: 24px; /* Increase padding inside the box */
+    width: 400px; /* Increase the width */
+    height: auto; /* Allow height to adjust dynamically */
+    margin: 20px auto; /* Center the box horizontally */
+    font-size: 1.2em; /* Slightly larger font size for the text */
+}
+
+.transaction-label {
+    color: #ffffff; /* Replace with your desired color (e.g., orange) */
+    font-weight: bold; /* Optional: Keep the text bold */
+}
+

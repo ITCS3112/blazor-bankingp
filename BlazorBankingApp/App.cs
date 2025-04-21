@@ -1,4 +1,5 @@
 using BlazorBankingApp.Components;
+using BlazorBankingApp.Service;
 using BlazorBankingApp.Services;  // Import services
 using DotNetEnv;
 
@@ -33,7 +34,7 @@ try
         try
         {
             var user = await supabaseClient.Auth.GetUser(session.AccessToken);
-            Console.WriteLine($" Session refreshed for: {user.Email}");
+            Console.WriteLine($" Session refreshed for: {user?.Email}");
         }
         catch (Exception ex)
         {
@@ -59,6 +60,7 @@ builder.Services.AddSingleton(supabaseService);
 builder.Services.AddSingleton(supabaseClient);
 builder.Services.AddSingleton<SupabaseService>();
 builder.Services.AddSingleton<UserService>();
+builder.Services.AddSingleton<DataService>();
 
 // Register Blazor Components
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();

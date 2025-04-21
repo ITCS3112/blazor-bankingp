@@ -1,6 +1,8 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager Navigation
 @inject Services.SupabaseService SupabaseService
+@inject DataService DataService
+@using BlazorBankingApp.Service
 
 <div class="page">
     <div class="sidebar @(IsHomePage ? "no-background" : "")">
@@ -16,13 +18,11 @@
                 @if (!string.IsNullOrEmpty(Email)) {
                     <span class="username">Welcome, @Email</span>
                 }
-                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">Logout</a>
+                <a href="#" @onclick="Logout">Logout</a>
                 <a href="/about" target="_blank">About</a>
             </div>
 
-            <div class="layout-image-container">
-                <img src="/images/CLT logo white.png" alt="CLT Logo" class="layout-logo" />
-            </div>
+            
         }
         <article class="content px-4">
             @Body
@@ -35,8 +35,35 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+
 @code {
     private bool IsHomePage => Navigation.Uri.EndsWith("/");
 
     private string Email => SupabaseService.GetClient().Auth.CurrentSession?.User?.Email?.ToString() ?? string.Empty;
+    private async Task<string> GetNameAsync() => await DataService.FetchName();
+    private string Name { get; set; } = "Loading...";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Name = await DataService.FetchName();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching name: {ex.Message}");
+            Name = "Error loading name.";
+        }
+    }
+
+    private async Task Logout()
+    {
+        try {
+            await SupabaseService.GetClient().Auth.SignOut();
+            Navigation.NavigateTo("/login", true);
+        } catch (Exception ex) {
+            Console.WriteLine($"Error during logout: {ex.Message}");
+        } 
+    }
 }
