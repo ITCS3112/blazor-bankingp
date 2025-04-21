@@ -26,7 +26,6 @@ public class UserService
     public UserService(SupabaseService supabaseService)
     {
         _supabaseClient = supabaseService.GetClient();
-        
     }
 
 
@@ -42,6 +41,8 @@ public class UserService
         id = bankUser.Id;
         balance = (float)bankUser.balance;
         authoritylevel = bankUser.AuthorityLevel;
+        name = bankUser.Name;
+        phone = bankUser.Phone;
 
         CurrentUser = bankUser;
         Console.WriteLine($"Loaded user: {email}, Balance: {balance}");
@@ -68,8 +69,6 @@ public class UserService
                 .Select("*")
                 .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, user.Id)
                 .Single();
-            
-            
             return (user, bankUser);
             
         }
@@ -210,16 +209,19 @@ public class SupabaseService : IDisposable
     {
         try
         {
-            var options = new SignUpOptions
-            {
-                Data = new Dictionary<string, object>
-                {
-                    { "name", (object?)displayName },
-                    { "phone", (object?)phone }
-                }
-            };
+            // 🔹 Check if user already exists
+            
 
-            var authResponse = await _supabaseClient.Auth.SignUp(email.Trim(), password, options);
+            var authResponse = await _supabaseClient.Auth.SignUp(email.Trim(), password);
+
+            // 🔹 Insert new user into auth.users table
+            var user = new BankUser
+            {
+                Name = displayName,
+                Phone = phone
+            };
+            var insertedUser = await _supabaseClient.From<BankUser>().Insert(user);
+            
 
             if (authResponse.User == null)
             {

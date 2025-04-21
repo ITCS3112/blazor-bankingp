@@ -187,7 +187,7 @@
             {
                 ErrorMessage = "Loan application successful!";
                 LoanSelected = true;
-                await Task.Delay(5000);
+                await Task.Delay(3000);
                 Navigation.NavigateTo("/home");
             }
             else
@@ -207,7 +207,7 @@
         {
             IsLoading = false;
         }
-        await Task.Delay(5000);
+        await Task.Delay(3000);
         Navigation.NavigateTo("/home");
     }
 }

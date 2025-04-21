@@ -13,4 +13,10 @@ public class BankUser : BaseModel
 
     [Supabase.Postgrest.Attributes.Column("authoritylevel")]
     public string AuthorityLevel { get; set; }
+
+    [Supabase.Postgrest.Attributes.Column("name")]
+    public string Name { get; set; }
+
+    [Supabase.Postgrest.Attributes.Column("phone")]
+    public string Phone { get; set; }
 }
