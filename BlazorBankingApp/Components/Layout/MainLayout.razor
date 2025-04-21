@@ -51,6 +51,7 @@
 
     private string Email => SupabaseService.GetClient().Auth.CurrentSession?.User?.Email?.ToString() ?? string.Empty;
 <<<<<<< HEAD
+<<<<<<< HEAD
     private string Name => SupabaseService.GetClient().Auth.CurrentSession?.User?.UserMetadata?.GetValueOrDefault("name")?.ToString() ?? string.Empty;
 
 
@@ -74,3 +75,7 @@
 }    
     
 >>>>>>> 26fbc54 (Signup logic and recreating Bankusers mode)
+=======
+    private string Name => UserService.GetUserName() ?? "Error Loading Name - MainLayout.razor";
+}
+>>>>>>> 0b19b15 (Bankuser table now holds name and phone)

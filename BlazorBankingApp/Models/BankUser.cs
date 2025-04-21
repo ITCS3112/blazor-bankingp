@@ -6,6 +6,7 @@ using Supabase.Postgrest.Models;
 public class BankUser : BaseModel
 {
     [PrimaryKey("id")]
+    [Supabase.Postgrest.Attributes.Column("id")]
     public string Id { get; set; }
 
 <<<<<<< HEAD
