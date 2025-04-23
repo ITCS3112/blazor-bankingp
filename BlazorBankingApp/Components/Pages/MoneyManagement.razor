@@ -1,14 +1,216 @@
-@page "/management";
+@page "/management"
 
 @rendermode InteractiveServer
-@using Supabase
-@using Npgsql
 @inject Services.SupabaseService SupabaseService
 @inject Services.UserService UserService
-@inject NavigationManager NavigationManager
+@inject NavigationManager Navigation
+@inject DataService DataService
+@using Supabase
+@using Supabase.Postgrest.Models
+@using static Supabase.Postgrest.Constants
+@using Supabase.Postgrest.Extensions
+@using BlazorBankingApp.Service
+@using System
 
-<PageTitle>Deposit Withdraw Money</PageTitle>
+<PageTitle>Money Management</PageTitle>
 
-<div class="">
+<div class="money-management-background">
+    <h1>Manage Your Money</h1>
 
+    @if (IsLoading)
+    {
+        <p>Loading...</p>
+    }
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <p style="color: red;">@ErrorMessage</p>
+    }
+
+    <div class="balance-container">
+        <p>
+            <strong class="balance-label">Current Balance:</strong>
+        </p>
+        <p class="balance-amount">@Balance.ToString("C2")</p>
+    </div>
+
+    <div class="transaction-controls">
+        <div class="transaction-input">
+            <label for="transaction-amount">Amount:</label>
+            <input id="transaction-amount" type="number" step="0.01" @bind="TransactionAmount" />
+        </div>
+        <div class="transaction-buttons">
+            <button class="btn btn-success" @onclick="DepositMoney">Deposit</button>
+            <button class="btn btn-danger" @onclick="WithdrawMoney">Withdraw</button>
+        </div>
+    </div>
 </div>
+
+<style>
+    .money-management-background {
+        background-color: #f5f5f5;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px;
+    }
+
+    .balance-container {
+        margin-bottom: 20px;
+    }
+
+    .balance-label {
+        font-weight: bold;
+    }
+
+    .balance-amount {
+        font-size: 24px;
+        color: green;
+    }
+
+    .transaction-controls {
+        margin-top: 20px;
+    }
+
+    .transaction-input {
+        margin-bottom: 10px;
+    }
+
+    .transaction-buttons button {
+        font-size: 16px;
+        padding: 10px;
+        margin-top: 10px;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+        border: none;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+    }
+</style>
+
+@code {
+    private decimal Balance { get; set; }
+    private decimal TransactionAmount { get; set; }
+    private bool IsLoading { get; set; }
+    private string ErrorMessage { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var session = SupabaseService.GetClient().Auth.CurrentSession;
+        if (session == null)
+        {
+            ErrorMessage = "Please log in to view your balance.";
+            return;
+        }
+
+        IsLoading = true;
+        try
+        {
+            float rawBalance = await DataService.FetchBalance();
+            Balance = (decimal)rawBalance;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading balance: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task DepositMoney()
+    {
+        if (TransactionAmount <= 0)
+        {
+            ErrorMessage = "Please enter a valid deposit amount.";
+            return;
+        }
+
+        try
+        {
+            IsLoading = true;
+            Balance += TransactionAmount;
+            await UpdateBalanceInDatabase();
+            ErrorMessage = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error during deposit: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task WithdrawMoney()
+    {
+        if (TransactionAmount <= 0)
+        {
+            ErrorMessage = "Please enter a valid withdrawal amount.";
+            return;
+        }
+
+        if (TransactionAmount > Balance)
+        {
+            ErrorMessage = "Insufficient funds.";
+            return;
+        }
+
+        try
+        {
+            IsLoading = true;
+            Balance -= TransactionAmount;
+            await UpdateBalanceInDatabase();
+            ErrorMessage = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error during withdrawal: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task UpdateBalanceInDatabase()
+    {
+        var client = SupabaseService.GetClient();
+        var userId = client.Auth.CurrentSession?.User?.Id;
+
+        if (userId == null)
+        {
+            throw new Exception("User not authenticated.");
+        }
+
+        // Fetch current user to get required fields like authoritylevel
+        var bankUser = await client
+            .From<BankUser>()
+            .Filter("id", Operator.Equals, userId)
+            .Single();
+
+        if (bankUser == null)
+        {
+            throw new Exception("User not found.");
+        }
+
+        bankUser.Balance = Balance;
+
+        var response = await client
+            .From<BankUser>()
+            .Upsert(bankUser);
+
+        if (!response.ResponseMessage.IsSuccessStatusCode)
+        {
+            var error = await response.ResponseMessage.Content.ReadAsStringAsync();
+            throw new Exception($"Error updating balance in database: {error}");
+        }
+    }
+}

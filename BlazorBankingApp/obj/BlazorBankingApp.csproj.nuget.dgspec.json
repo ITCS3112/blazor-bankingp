@@ -1,26 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\junio\\OneDrive\\Documents\\Coding\\blazor-bankingp\\BlazorBankingApp\\BlazorBankingApp.csproj": {}
+    "C:\\Users\\pokef\\OneDrive\\Documents\\GitHub\\blazor-bankingp\\BlazorBankingApp\\BlazorBankingApp.csproj": {}
   },
   "projects": {
-    "C:\\Users\\junio\\OneDrive\\Documents\\Coding\\blazor-bankingp\\BlazorBankingApp\\BlazorBankingApp.csproj": {
+    "C:\\Users\\pokef\\OneDrive\\Documents\\GitHub\\blazor-bankingp\\BlazorBankingApp\\BlazorBankingApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\junio\\OneDrive\\Documents\\Coding\\blazor-bankingp\\BlazorBankingApp\\BlazorBankingApp.csproj",
+        "projectUniqueName": "C:\\Users\\pokef\\OneDrive\\Documents\\GitHub\\blazor-bankingp\\BlazorBankingApp\\BlazorBankingApp.csproj",
         "projectName": "BlazorBankingApp",
-        "projectPath": "C:\\Users\\junio\\OneDrive\\Documents\\Coding\\blazor-bankingp\\BlazorBankingApp\\BlazorBankingApp.csproj",
-        "packagesPath": "C:\\Users\\junio\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\junio\\OneDrive\\Documents\\Coding\\blazor-bankingp\\BlazorBankingApp\\obj\\",
+        "projectPath": "C:\\Users\\pokef\\OneDrive\\Documents\\GitHub\\blazor-bankingp\\BlazorBankingApp\\BlazorBankingApp.csproj",
+        "packagesPath": "C:\\Users\\pokef\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\pokef\\OneDrive\\Documents\\GitHub\\blazor-bankingp\\BlazorBankingApp\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\junio\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\pokef\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -39,7 +38,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.100"
+        "SdkAnalysisLevel": "9.0.200"
       },
       "frameworks": {
         "net9.0": {
@@ -77,7 +76,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.102/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
