@@ -4,6 +4,7 @@
 @inject Services.UserService UserService
 @inject NavigationManager Navigation
 @inject DataService DataService
+@inject TransactionsService TransactionsService
 @using Supabase;
 @using Supabase.Postgrest.Models;
 @using static Supabase.Postgrest.Constants;
@@ -19,6 +20,7 @@
         </p>
         <p class="balance-amount">@Balance.ToString("C2")</p>
     </div>
+    <button @onclick="TestTransfer">Send Test $1 Transfer</button>
     <div class="transaction-container">
         <p>
             <strong class="transaction-label">Transaction History:</strong>
@@ -54,8 +56,36 @@
         }
 
         Balance = await DataService.FetchBalance();
-        Name = await DataService.FetchName();
-        //await FetchBalance();
+    }
+
+    private async Task TestTransfer() {
+        try
+        {
+            var session = SupabaseService.GetClient().Auth.CurrentSession;
+            if (session == null)
+            {
+                ErrorMessage = "User session is not available. Please log in again.";
+                return;
+            }
+            Console.WriteLine($"Current user: {session.User.Email}");
+
+            var senderId = Guid.Parse(session.User.Id);
+            decimal amount = 1.00M; // Example amount to transfer
+            var recipientId = Guid.Parse("37d15e73-6a2a-41eb-8efe-3b26f59db7b1"); // Replace with actual recipient ID
+            Console.WriteLine($"Sender ID: {senderId}");
+            Console.WriteLine($"Recipient ID: {recipientId}");
+            Console.WriteLine($"Amount: {amount}");
+            await TransactionsService.SendTransactionAsync(senderId, recipientId, amount);
+            Balance = await DataService.FetchBalance(); // Refresh balance after transfer
+
+            //Testing random transfer insertion
+            
+            
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error during transfer: {ex.Message}";
+        }
     }
 
     /*private async Task FetchBalance()

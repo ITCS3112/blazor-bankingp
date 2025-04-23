@@ -61,6 +61,7 @@ builder.Services.AddSingleton(supabaseClient);
 builder.Services.AddSingleton<SupabaseService>();
 builder.Services.AddSingleton<UserService>();
 builder.Services.AddSingleton<DataService>();
+builder.Services.AddSingleton<TransactionsService>();
 
 // Register Blazor Components
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
