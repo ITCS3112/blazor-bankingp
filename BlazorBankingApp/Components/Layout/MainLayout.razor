@@ -16,7 +16,7 @@
         @if (!IsHomePage) {
             <div class="top-row px-4">
                 @if (!string.IsNullOrEmpty(Email)) {
-                    <span class="username">Welcome, @Email</span>
+                    <span class="username">Welcome, @Name</span>
                 }
                 <a href="#" @onclick="Logout">Logout</a>
                 <a href="/about" target="_blank">About</a>
@@ -41,20 +41,12 @@
     private bool IsHomePage => Navigation.Uri.EndsWith("/");
 
     private string Email => SupabaseService.GetClient().Auth.CurrentSession?.User?.Email?.ToString() ?? string.Empty;
-    private async Task<string> GetNameAsync() => await DataService.FetchName();
-    private string Name { get; set; } = "Loading...";
+    private string Name => SupabaseService.GetClient().Auth.CurrentSession?.User?.UserMetadata?.GetValueOrDefault("name")?.ToString() ?? string.Empty;
+
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            Name = await DataService.FetchName();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error fetching name: {ex.Message}");
-            Name = "Error loading name.";
-        }
+
     }
 
     private async Task Logout()

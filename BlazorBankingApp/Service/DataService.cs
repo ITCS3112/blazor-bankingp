@@ -51,8 +51,44 @@ namespace BlazorBankingApp.Service
                 throw;
             }
         }
+        public async Task<string> FetchAuthority()
+        {
+            try
+            {
+                var session = _supabaseService.GetClient().Auth.CurrentSession;
+                if (session == null)
+                {
+                    throw new InvalidOperationException("User session is not available. Please log in again.");
+                }
 
-        public async Task<string> FetchName()
+                using var supabaseService = new SupabaseService();
+                await supabaseService.RestoreSession();
+                BankUser bankUser = await supabaseService.GetClient()
+                        .From<BankUser>()
+                        .Select("authoritylevel")
+                        .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, supabaseService.GetClient().Auth.CurrentSession?.User?.Id ?? throw new InvalidOperationException("User is not authenticated."))
+                        .Single();
+
+                if (bankUser != null)
+                {
+                    Console.WriteLine($"Loaded user: {supabaseService.GetClient().Auth.CurrentSession?.User?.Email} Authority: {bankUser.AuthorityLevel}");
+                    return bankUser.AuthorityLevel;
+                }
+                else
+                {
+                    Console.WriteLine("Failed to load user authority level.");
+                }
+            return _userService.authoritylevel;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching Authority level: {ex.Message}");
+                throw;
+            }
+        }
+
+
+        /*public async Task<string> FetchName()
         {
             try
             {
@@ -69,6 +105,6 @@ namespace BlazorBankingApp.Service
                 Console.WriteLine($"Error fetching name: {ex.Message}");
                 throw;
             }
-        }
+        }*/
     }
 }
