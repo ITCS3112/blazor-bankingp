@@ -1,22 +1,30 @@
 .home-page-background {
-   
+
     min-height: 50vh;
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* Align items to the left */
-    justify-content: flex-start; /* Align content to the top */
-    text-align: left; /* Align text to the left */
-    padding-left: 20px; /* Add padding to create space from the left edge */
+    align-items: center;
+    /* Align items to the left */
+    justify-content: flex-start;
+    /* Align content to the top */
+    text-align: left;
+    /* Align text to the left */
+    padding-left: 20px;
+    /* Add padding to create space from the left edge */
     font-size: large;
 }
 
 
 .home-page-logo {
-    width: 250px; /* Adjust the width as needed */
-    height: auto; /* Maintain the aspect ratio */
-   
-    margin-bottom: 20px; /* Space between the image and the text */
+    width: 250px;
+    /* Adjust the width as needed */
+    height: auto;
+    /* Maintain the aspect ratio */
+
+    margin-bottom: 20px;
+    /* Space between the image and the text */
 }
+
 /* Style for the page title */
 h1 {
     color: #2c3e50;
@@ -40,6 +48,7 @@ p {
     justify-content: center;
     gap: 10px;
 }
+
 /* Style for the buttons */
 button.btn {
     margin-right: 10px;
@@ -47,6 +56,20 @@ button.btn {
     font-size: 1em;
 }
 
+transfer-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    display: flex;
+}
 
 /* Primary button style */
 button.btn-primary {
@@ -64,50 +87,92 @@ button.btn-primary:hover {
 
 
 .balance-container {
-    background: #49269a; /* Purple background */
-    color: white; /* White text color */
-    text-align: center; /* Center-align the text */
-    border-radius: 12px; /* Slightly larger rounded corners */
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2); /* Slightly larger shadow */
-    padding: 24px; /* Increase padding inside the box */
-    width: 400px; /* Increase the width */
-    height: auto; /* Allow height to adjust dynamically */
-    margin: 20px auto; /* Center the box horizontally */
-    font-size: 1.2em; /* Slightly larger font size for the text */
+    background: #49269a;
+    /* Purple background */
+    color: white;
+    /* White text color */
+    text-align: center;
+    /* Center-align the text */
+    border-radius: 12px;
+    /* Slightly larger rounded corners */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+    /* Slightly larger shadow */
+    padding: 24px;
+    /* Increase padding inside the box */
+    width: 400px;
+    /* Increase the width */
+    height: auto;
+    /* Allow height to adjust dynamically */
+    margin: 20px auto;
+    /* Center the box horizontally */
+    font-size: 1.2em;
+    /* Slightly larger font size for the text */
 }
 
 
 .balance-amount {
-    font-size: 1.5em; /* Larger font size for the balance */
-    font-weight: bold; /* Make the balance bold */
-    color: #ffffff; /* Green color for the balance */
+    font-size: 1.5em;
+    /* Larger font size for the balance */
+    font-weight: bold;
+    /* Make the balance bold */
+    color: #ffffff;
+    /* Green color for the balance */
 }
 
 
 .balance-label {
-    color: #ffffff; /* Replace with your desired color (e.g., orange) */
-    font-weight: bold; /* Optional: Keep the text bold */
+    color: #ffffff;
+    /* Replace with your desired color (e.g., orange) */
+    font-weight: bold;
+    /* Optional: Keep the text bold */
 }
 
 
 .transaction-container {
-    background: #49269a; /* Purple background */
-    color: white; /* White text color */
-    text-align: center; /* Center-align the text */
-    border-radius: 12px; /* Slightly larger rounded corners */
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2); /* Slightly larger shadow */
-    padding: 24px; /* Increase padding inside the box */
-    width: 400px; /* Increase the width */
-    height: auto; /* Allow height to adjust dynamically */
-    margin: 20px auto; /* Center the box horizontally */
-    font-size: 1.2em; /* Slightly larger font size for the text */
+    background: #49269a;
+    /* Purple background */
+    color: white;
+    /* White text color */
+    text-align: center;
+    /* Center-align the text */
+    border-radius: 12px;
+    /* Slightly larger rounded corners */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+    /* Slightly larger shadow */
+    padding: 24px;
+    /* Increase padding inside the box */
+    width: 400px;
+    /* Increase the width */
+    height: 460px;
+    /* Allow height to adjust dynamically */
+    margin: 20px auto;
+    /* Center the box horizontally */
+    font-size: 1.2em;
+    /* Slightly larger font size for the text */
+    overflow-y: auto;
+}
+
+.transaction-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.transaction-container::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 4px;
+}
+
+.transaction-container::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
 }
 
 
 .transaction-label {
-    color: #ffffff; /* Replace with your desired color (e.g., orange) */
-    font-weight: bold; /* Optional: Keep the text bold */
+    color: #ffffff;
+    /* Replace with your desired color (e.g., orange) */
+    font-weight: bold;
+    /* Optional: Keep the text bold */
 }
+
 .transaction-list {
     list-style-type: none;
     padding: 0;
@@ -143,6 +208,7 @@ button.btn-primary:hover {
     font-size: 0.9em;
     color: #bbbbbb;
 }
+
 .transaction-list {
     list-style-type: none;
     padding: 0;
@@ -184,9 +250,11 @@ button.btn-primary:hover {
 }
 
 .transaction-sent {
-    color: #f87171; /* Red color for sent transactions */
+    color: #f87171;
+    /* Red color for sent transactions */
 }
 
 .transaction-received {
-    color: #34d399; /* Green color for received transactions */
+    color: #34d399;
+    /* Green color for received transactions */
 }
