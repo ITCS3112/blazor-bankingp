@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 public class TransactionsService
 {
     private readonly Supabase.Client _supabase;
@@ -40,51 +41,67 @@ public class TransactionsService
         sender.Balance -= amount;
         receiver.Balance += amount;
 
-        // 4. Log transaction
-        var transaction = new Transaction
-        {
-            Id = Guid.NewGuid(),
-            SenderId = senderId,
-            ReceiverId = receiverId,
-            Amount = amount,
-            Timestamp = DateTime.UtcNow,
-        };
-
-        // 5. Send updates (Supabase doesn't support transactions natively — do these sequentially)
         try
         {
             await _supabase.From<BankUser>().Update(sender);
             await _supabase.From<BankUser>().Update(receiver);
-            Console.WriteLine($"Logging transaction: {transaction.Amount} from {transaction.SenderId} to {transaction.ReceiverId}");
-            Console.WriteLine($"Inserting transaction: {transaction.Id}, {transaction.SenderId}, {transaction.ReceiverId}, {transaction.Amount}, {transaction.Timestamp}");
 
-            // Log the transaction
+            var transactionId = Guid.NewGuid();
+            var logTime = DateTime.UtcNow;
 
-            var insertResult = await _supabase.From<Transaction>().Insert(transaction);
+            await _supabase.Rpc("log_transaction", new
+            {
+                transaction_id = transactionId,
+                sender_id = senderId,
+                receiver_id = receiverId,
+                amount = amount,
+                log_time = logTime
 
+            });
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error during inserResult: {ex.Message}");
+            Console.WriteLine($"Error during transaction: {ex.Message}");
         }
 
-        //Testing transfer
+        return "Transaction successful!";
+    }
+
+    public async Task<List<Transaction>> GetTransactionsAsync(Guid userId)
+    {
+        Console.WriteLine($"GetTransactionsAsync called for user: {userId}");
         try
         {
-            var directInsert = await _supabase.From<Transaction>().Insert(new Transaction
+            var senderTransactions = await _supabase
+                .From<Transaction>()
+                .Filter("sender_id", Supabase.Postgrest.Constants.Operator.Equals, userId.ToString())
+                .Get();
+
+            Console.WriteLine($"Found {senderTransactions.Models.Count} sender transactions");
+            
+            var receiverTransactions = await _supabase
+                .From<Transaction>()
+                .Filter("receiver_id", Supabase.Postgrest.Constants.Operator.Equals, userId.ToString())
+                .Get();
+            
+            Console.WriteLine($"Found {receiverTransactions.Models.Count} receiver transactions");
+
+            var combined = new List<Transaction>();
+            combined.AddRange(senderTransactions.Models);
+            combined.AddRange(receiverTransactions.Models);
+
+            foreach (var transaction in combined)
             {
-                Id = Guid.NewGuid(),
-                SenderId = Guid.NewGuid(),
-                ReceiverId = Guid.NewGuid(),
-                Amount = 5.55M,
-                Timestamp = DateTime.UtcNow
-            });
-            Console.WriteLine($"Inserted transaction? Count: {directInsert.Models.Count}");
+                
+            }
+        
+            return combined.OrderByDescending(t => t.Timestamp).ToList();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error during direct insert: {ex.Message}");
+            Console.WriteLine($"Error fetching transactions in TransactionsService: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            return new List<Transaction>();
         }
-        return "Transaction completed successfully.";
     }
 }

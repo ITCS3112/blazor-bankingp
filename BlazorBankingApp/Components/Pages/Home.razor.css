@@ -98,4 +98,34 @@ button.btn-primary:hover {
     color: #ffffff; /* Replace with your desired color (e.g., orange) */
     font-weight: bold; /* Optional: Keep the text bold */
 }
+.transaction-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.transaction-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.transaction-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.negative-amount {
+    color: #ff6b6b;
+}
+
+.positive-amount {
+    color: #51cf66;
+}
+
+.transaction-details {
+    font-size: 0.9em;
+    color: #adb5bd;
+}
 
