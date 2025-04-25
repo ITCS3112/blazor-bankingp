@@ -22,9 +22,36 @@
     </div>
     <button @onclick="TestTransfer">Send Test $1 Transfer</button>
     <div class="transaction-container">
-        <p>
-            <strong class="transaction-label">Transaction History:</strong>
-        </p>
+        <h3 class="transaction-label">Transaction History</h3>
+        @if (transactions == null || !transactions.Any())
+        {
+            <p>No transactions found.</p>
+        }
+        else
+        {
+            <ul class="transaction-list">
+                @foreach (var transaction in transactions)
+                {
+                    <li class="transaction-item @GetTransactionClass(transaction)">
+                        <div class="transaction-header">
+                        <span class="transaction-date">@ConvertToEST(transaction.Timestamp)</span>                            <span class="transaction-amount @GetAmountClass(transaction)">
+                                @FormatTransactionAmount(transaction)
+                            </span>
+                        </div>
+                        <div class="transaction-details">
+                            @if (IsUserSender(transaction))
+                            {
+                                <span>Sent to: @GetSimplifiedId(transaction.ReceiverId)</span>
+                            }
+                            else
+                            {
+                                <span>Received from: @GetSimplifiedId(transaction.SenderId)</span>
+                            }
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
     </div>
 
     @if (IsLoading)
@@ -42,7 +69,8 @@
 @code {
     private float Balance { get; set; }
     private string ID => SupabaseService.GetClient().Auth.CurrentSession?.User?.Id?.ToString() ?? string.Empty;
-    private string Name {get; set; } = string.Empty;
+    private List<Transaction> transactions { get; set; }
+    private string Name { get; set; } = string.Empty;
     private bool IsLoading { get; set; }
     private string ErrorMessage { get; set; } = string.Empty;
 
@@ -56,9 +84,11 @@
         }
 
         Balance = await DataService.FetchBalance();
+        await FetchTransactions(); // Fetch transactions on initialization
     }
 
-    private async Task TestTransfer() {
+    private async Task TestTransfer()
+    {
         try
         {
             var session = SupabaseService.GetClient().Auth.CurrentSession;
@@ -75,51 +105,98 @@
             Console.WriteLine($"Sender ID: {senderId}");
             Console.WriteLine($"Recipient ID: {recipientId}");
             Console.WriteLine($"Amount: {amount}");
-            await TransactionsService.SendTransactionAsync(senderId, recipientId, amount);
+            await TransactionsService.SendTransactionAsync(recipientId, senderId, amount);
             Balance = await DataService.FetchBalance(); // Refresh balance after transfer
+            await FetchTransactions(); // Refresh transactions after transfer
 
             //Testing random transfer insertion
-            
-            
+
+
         }
         catch (Exception ex)
         {
             ErrorMessage = $"Error during transfer: {ex.Message}";
         }
     }
-
-    /*private async Task FetchBalance()
+    private async Task FetchTransactions()
     {
         try
         {
-            
-            IsLoading = true;
-
             var session = SupabaseService.GetClient().Auth.CurrentSession;
-            Console.WriteLine("Error Line 56 Home.razor");
             if (session == null)
             {
                 ErrorMessage = "User session is not available. Please log in again.";
                 return;
             }
+
+            var userId = Guid.Parse(session.User.Id);
+            Console.WriteLine($"Fetching transactions for user ID: {userId}");
+            transactions = await TransactionsService.GetTransactionsAsync(userId);
+            if (transactions == null)
+            {
+                Console.WriteLine("Transactions result is null");
+            }
             else
             {
-                Console.WriteLine("Session is available.");
+                Console.WriteLine($"Fetched {transactions.Count} transactions");
+                foreach (var tx in transactions)
+                {
+                    Console.WriteLine($"Transaction: {tx.Id}, Amount: {tx.Amount}, Timestamp: {tx.Timestamp}");
+                }
             }
-            
-            await UserService.SetBalance();
-            Balance = UserService.balance;
-            
+            StateHasChanged();
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"(In Home.razor) Error fetching balance: {ex.Message}";
+            ErrorMessage = $"Error fetching transactions in Home.razor: {ex.Message}";
         }
-        finally
-        {
-            IsLoading = false;
-            StateHasChanged();
-        }
-    }*/
+    }
+    private bool IsUserSender(Transaction transaction)
+    {
+        var userId = SupabaseService.GetClient().Auth.CurrentSession?.User?.Id;
+        return transaction.SenderId.ToString() == userId;
+    }
+
+    private string GetTransactionClass(Transaction transaction)
+    {
+        return IsUserSender(transaction) ? "outgoing-transaction" : "incoming-transaction";
+    }
+
+    private string GetAmountClass(Transaction transaction)
+    {
+        return IsUserSender(transaction) ? "negative-amount" : "positive-amount";
+    }
+
+    private string FormatTransactionAmount(Transaction transaction)
+    {
+        return IsUserSender(transaction)
+        ? $"-${transaction.Amount:F2}"
+        : $"+${transaction.Amount:F2}";
+    }
+
+    private string GetSimplifiedId(Guid id)
+    {
+        // Just show first 8 characters of the ID
+        return id.ToString().Substring(0, 8) + "...";
+    }
+    private string ConvertToEST(DateTime utcTime)
+{
+    try
+    {
+        var estTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+        var estTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, estTimeZone);
+        return estTime.ToString("MMM dd, yyyy HH:mm"); // Format as desired
+    }
+    catch (TimeZoneNotFoundException)
+    {
+        Console.WriteLine("Eastern Standard Time zone not found.");
+        return utcTime.ToString("MMM dd, yyyy HH:mm"); // Fallback to UTC
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error converting time to EST: {ex.Message}");
+        return utcTime.ToString("MMM dd, yyyy HH:mm"); // Fallback to UTC
+    }
+}
 
 }

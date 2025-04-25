@@ -23,9 +23,9 @@ public class UserService
     public string? phone { get; set; }
     public float balance { get; set; }
 
-    public UserService(Supabase.Client supabaseClient)
+    public UserService(SupabaseService supabaseService)
     {
-        _supabaseClient = supabaseClient;
+        _supabaseClient = supabaseService.GetClient();
     }
 
 
@@ -39,8 +39,10 @@ public class UserService
         }
 
         id = bankUser.Id;
-        balance = (float)bankUser.Balance;
+        balance = (float)bankUser.balance;
         authoritylevel = bankUser.AuthorityLevel;
+        name = bankUser.Name;
+        phone = bankUser.Phone;
 
         CurrentUser = bankUser;
         Console.WriteLine($"Loaded user: {email}, Balance: {balance}");
@@ -67,8 +69,8 @@ public class UserService
                 .Select("*")
                 .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, user.Id)
                 .Single();
-
             return (user, bankUser);
+
         }
         catch (Exception ex)
         {
@@ -80,12 +82,13 @@ public class UserService
     public async Task<BankUser?> GetBankUserData()
     {
         BankUser bankUser = await LoadBankUser();
-        Console.WriteLine($"Loaded user: {_supabaseClient.Auth.CurrentSession?.User?.Email}Balance: {bankUser?.Balance}");
+        Console.WriteLine($"Loaded user: {_supabaseClient.Auth.CurrentSession?.User?.Email}Balance: {bankUser?.balance}");
         return bankUser;
     }
 
     public async Task SetBalance()
     {
+<<<<<<< HEAD:BlazorBankingApp/Service/Services.cs
         
         using var supabaseService = new SupabaseService();
         await supabaseService.RestoreSession();
@@ -95,21 +98,89 @@ public class UserService
             return;
         }
         BankUser bankUser = await supabaseService.GetClient()
+=======
+        try
+        {
+            var userId = _supabaseClient.Auth.CurrentSession?.User?.Id
+                         ?? throw new InvalidOperationException("User is not authenticated.");
+
+            var bankUser = await _supabaseClient
+>>>>>>> eb70c34 (Logout page created, Loan page works):BlazorBankingApp/Services.cs
                 .From<BankUser>()
                 .Select("balance")
-                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, supabaseService.GetClient().Auth.CurrentSession?.User?.Id ?? throw new InvalidOperationException("User is not authenticated."))
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, userId)
                 .Single();
 
-        if (bankUser != null)
-        {
-            balance = (float)bankUser.Balance;
+            balance = (float)bankUser.balance;
+            Console.WriteLine($"[SetBalance] User balance loaded: {balance}");
         }
-        else
+        catch (Exception ex)
         {
-            Console.WriteLine("Failed to load user balance.");
+            Console.WriteLine($"[SetBalance] Error: {ex.Message}");
         }
     }
+
+    public async Task<bool> AddToBalance(float amountToAdd)
+    {
+        try
+        {
+            var userId = _supabaseClient.Auth.CurrentSession?.User?.Id;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                Console.WriteLine("User is not authenticated. - Services.AddToBalance");
+                return false;
+            }
+
+            Console.WriteLine($"Supabase Auth ID: {userId} - Services.AddToBalance");
+
+            var response = await _supabaseClient
+                .From<BankUser>()
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, userId)
+                .Get();
+
+            if (response.Models == null || !response.Models.Any())
+            {
+                Console.WriteLine("No user model found for given ID. - Services.AddToBalance");
+                return false;
+            }
+
+            var user = response.Models.First();
+            Console.WriteLine($"Current balance: {user.balance} - Services.AddToBalance");
+
+            user.balance += (decimal)amountToAdd;
+
+            var updateResponse = await _supabaseClient
+                .From<BankUser>()
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, userId)
+                .Update(user);
+
+            if (updateResponse != null && updateResponse.Models.Count > 0)
+            {
+                Console.WriteLine("Balance update successful. - Services.AddToBalance");
+                balance = (float)user.balance;
+                return true;
+            }
+            else
+            {
+                Console.WriteLine("Balance update failed - update response empty. - Services.AddToBalance");
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating balance: {ex.Message} - Services.AddToBalance");
+            return false;
+        }
+    }
+    public string GetUserName() => name;
 }
+
+
+
+
+
+
 
 public class SupabaseService : IDisposable
 {
@@ -145,15 +216,18 @@ public class SupabaseService : IDisposable
         _dbConnection = new NpgsqlConnection(connectionString);
         _dbConnection.Open();
         Console.WriteLine(" PostgreSQL connection opened.");
+
     }
 
     public Supabase.Client GetClient() => _supabaseClient;
     public NpgsqlConnection GetConnection() => _dbConnection;
 
-    public async Task<Supabase.Gotrue.User?> SignUpUser(string email, string password, string displayName, string phone)
+    public async Task<Supabase.Gotrue.User?> SignUpUser(string email, string password, string displayName, string phone, string authorityLevel)
     {
         try
         {
+<<<<<<< HEAD:BlazorBankingApp/Service/Services.cs
+<<<<<<< HEAD:BlazorBankingApp/Service/Services.cs
             Console.WriteLine($" Signing up user: {email}");
             var options = new SignUpOptions
             {
@@ -174,24 +248,113 @@ public class SupabaseService : IDisposable
 
             var authResponse = await _supabaseClient.Auth.SignUp(email.Trim(), password, options);
             Console.WriteLine("AuthResponse received");
+=======
+            // 🔹 Check if user already exists
+            
 
+            var authResponse = await _supabaseClient.Auth.SignUp(email.Trim(), password);
+
+            // 🔹 Insert new user into auth.users table
+            var user = new BankUser
+=======
+            // Optional: store in auth.users metadata
+            var options = new SignUpOptions
+>>>>>>> 0b19b15 (Bankuser table now holds name and phone):BlazorBankingApp/Services.cs
+            {
+                Data = new Dictionary<string, object>
+            {
+                { "name", displayName },
+                { "phone", phone },
+                { "authoritylevel", authorityLevel }
+            }
+            };
+<<<<<<< HEAD:BlazorBankingApp/Service/Services.cs
+            var insertedUser = await _supabaseClient.From<BankUser>().Insert(user);
+            
+>>>>>>> 26fbc54 (Signup logic and recreating Bankusers mode):BlazorBankingApp/Services.cs
+=======
+>>>>>>> 0b19b15 (Bankuser table now holds name and phone):BlazorBankingApp/Services.cs
+
+            var authResponse = await _supabaseClient.Auth.SignUp(email.Trim(), password, options);
+
+            // 🔒 Check if user already exists
             if (authResponse.User == null)
             {
-                Console.WriteLine(" Signup failed.");
+                Console.WriteLine("⚠️ Signup failed — user already exists.");
                 return null;
             }
+<<<<<<< HEAD:BlazorBankingApp/Service/Services.cs
             // 🔹 Save session for persistent login
             await SaveSession();
+=======
 
-            Console.WriteLine($" User signed up successfully: {authResponse.User.Email}");
+            Console.WriteLine($"✅ User signed up with ID: {authResponse.User.Id}");
+>>>>>>> 0b19b15 (Bankuser table now holds name and phone):BlazorBankingApp/Services.cs
+
+            // 🧱 Check if BankUser already exists
+            var existingBankUser = await _supabaseClient
+                .From<BankUser>()
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, authResponse.User.Id)
+                .Single();
+
+            if (existingBankUser != null)
+            {
+                // Update existing BankUser record
+                existingBankUser.Name = displayName;
+                existingBankUser.Phone = phone;
+                existingBankUser.AuthorityLevel = authorityLevel;
+                var updateResponse = await _supabaseClient
+                    .From<BankUser>()
+                    .Upsert(existingBankUser);
+
+                if (updateResponse == null)
+                {
+                    Console.WriteLine("❌ Failed to update existing BankUser.");
+                }
+                else
+                {
+                    Console.WriteLine($"BankUser updated: {existingBankUser.Name}");
+                }
+            }
+            else
+            {
+                // Insert new BankUser record
+                var newBankUser = new BankUser
+                {
+                    Id = authResponse.User.Id,
+                    Name = displayName,
+                    Phone = phone,
+                    AuthorityLevel = authorityLevel,
+                    balance = 1000
+                };
+
+                var insertResponse = await _supabaseClient
+                    .From<BankUser>()
+                    .Insert(newBankUser);
+
+                if (insertResponse != null)
+                {
+                    Console.WriteLine("✅ BankUser inserted successfully.");
+                }
+                else
+                {
+                    Console.WriteLine("❌ Failed to insert BankUser.");
+                }
+            }
+
+            await SaveSession(); // Optional: persist login session
             return authResponse.User;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($" Error signing up: {ex.Message}");
+            Console.WriteLine($"❌ [SignUpUser ERROR] {ex.Message}");
             return null;
         }
     }
+
+
+
+
 
 
     // 🔹 Save session manually after login
