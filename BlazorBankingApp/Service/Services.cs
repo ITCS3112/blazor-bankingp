@@ -152,36 +152,51 @@ public class SupabaseService : IDisposable
     public Supabase.Client GetClient() => _supabaseClient;
     public NpgsqlConnection GetConnection() => _dbConnection;
 
-    public async Task<Supabase.Gotrue.User?> SignUpUser(string email, string password, string displayName, string phone)    
+    public async Task<Supabase.Gotrue.User?> SignUpUser(string email, string password, string displayName, string phone, string authorityLevel)
     {
         try
         {
-         
             var authResponse = await _supabaseClient.Auth.SignUp(email.Trim(), password);
 
-            // Insert new user into auth.users table
+            if (authResponse.User == null)
+            {
+                Console.WriteLine("Signup failed.");
+                return null;
+            }
+
+            // Check if the user already exists in the BankUsers table
+            var existingUser = await _supabaseClient
+                .From<BankUser>()
+                .Select("*")
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, authResponse.User.Id)
+                .Single();
+
+            if (existingUser != null)
+            {
+                Console.WriteLine("User already exists in BankUsers table.");
+                return authResponse.User;
+            }
+
+            // Insert new user into BankUsers table
             var user = new BankUser
             {
+                Id = authResponse.User.Id,
                 Name = displayName,
-                Phone = phone
+                Phone = phone,
+                AuthorityLevel = authorityLevel,
+                Balance = 20000
             };
 
             var insertedUser = await _supabaseClient.From<BankUser>().Insert(user);
 
-
-            if (authResponse.User == null)
-            {
-                Console.WriteLine(" Signup failed.");
-                return null;
-            }
-            // 🔹 Save session for persistent login
+            // Save session for persistent login
             await SaveSession();
-            Console.WriteLine($" User signed up successfully: {authResponse.User.Email}");
+            Console.WriteLine($"User signed up successfully: {authResponse.User.Email}");
             return authResponse.User;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($" Error signing up: {ex.Message}");
+            Console.WriteLine($"Error signing up: {ex.Message}");
             return null;
         }
     }

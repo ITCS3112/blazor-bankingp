@@ -58,6 +58,11 @@
             <input @bind="phone" id="phone" type="text" class="form-control" placeholder="Enter your phone number" />
         </div>
 
+        <div class="mb-3">
+            <label for="adminID" class="form-label">Admin ID</label>
+            <input @bind="adminID" id="adminID" type="text" class="form-control" placeholder="Enter your admin ID" />
+        </div>
+
         <button @onclick="signUp" class="btn btn-primary w-100">Create Account</button>
 
         @if (!string.IsNullOrEmpty(signUpMessage))
@@ -70,6 +75,8 @@
 <style>
     .p-4 {
         max-width: 400px;
+    using Microsoft.VisualBasic;
+    using BankingSystem;
         using System.Diagnostics.CodeAnalysis;
         margin: 50px auto;
         background: #49269a;
@@ -105,14 +112,18 @@
     private string displayname;
     private string phone;
     private string signUpMessage = string.Empty;
-
+    private int adminID;
+    private bool isAdmin = false;
     private bool success;
 
 
     private async Task signUp()
     {
+
         try
         {
+            
+
             displayname = $"{firstname} {lastname}";
 
             if (password != confirmedpass)
@@ -120,9 +131,31 @@
                 signUpMessage = "Passwords do not match.";
                 return;
             }
-            var user = await SupabaseService.SignUpUser(email, password, displayname, phone);
 
-            Console.WriteLine($"User created: {user?.Email}");
+            var user = (Supabase.Gotrue.User?) null;
+
+            //Signs up an admin if the adminID is 4321 and user else wise
+            if (adminID == 4321)
+            {
+                isAdmin = true;
+                user = await SupabaseService.SignUpUser(email, password, displayname, phone, "admin");
+                Console.WriteLine($"Admin created: {user?.Email}");
+
+            }
+            else if (adminID != 4321)
+            {
+                isAdmin = false;
+                user = await SupabaseService.SignUpUser(email, password, displayname, phone, "user");
+                Console.WriteLine($"User created: {user?.Email}");
+
+            }
+            else
+            {
+                user = null;
+                signUpMessage = "Sign up failed. Please try again.";
+                return;
+            }
+            
             if (user != null)
             {
                 var currentSession = await SupabaseService.GetClient().Auth.SignIn(email, password);
