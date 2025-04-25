@@ -190,7 +190,6 @@
             throw new Exception("User not authenticated.");
         }
 
-        // Fetch current user to get required fields like authoritylevel
         var bankUser = await client
             .From<BankUser>()
             .Filter("id", Operator.Equals, userId)
