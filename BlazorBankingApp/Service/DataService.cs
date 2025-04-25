@@ -21,29 +21,44 @@ namespace BlazorBankingApp.Service
             try
             {
                 var session = _supabaseService.GetClient().Auth.CurrentSession;
-                if (session == null)
+                if (session == null || session.User == null)
                 {
                     throw new InvalidOperationException("User session is not available. Please log in again.");
                 }
+                Console.WriteLine($"Session restored. User ID: {session.User.Id}");
 
-                using var supabaseService = new SupabaseService();
+                using var supabaseService = _supabaseService;
                 await supabaseService.RestoreSession();
+
+                Console.WriteLine($"Fetching balance for user ID: {session.User.Id}");
+
                 BankUser bankUser = await supabaseService.GetClient()
-                        .From<BankUser>()
-                        .Select("balance")
-                        .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, supabaseService.GetClient().Auth.CurrentSession?.User?.Id ?? throw new InvalidOperationException("User is not authenticated."))
-                        .Single();
+                    .From<BankUser>()
+                    .Select("balance")
+                    .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, session.User.Id)
+                    .Single();
+
+
+                //If the count == 0 then the user is not in the BankUser table
+                var debugResponse = await supabaseService.GetClient()
+                    .From<BankUser>()
+                    .Select("*")
+                    .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, session.User.Id)
+                    .Get();
+
+                Console.WriteLine($"Debug query result count: {debugResponse.Models.Count}");
 
                 if (bankUser != null)
                 {
-                    Console.WriteLine($"Loaded user: {supabaseService.GetClient().Auth.CurrentSession?.User?.Email} Balance: {bankUser.Balance}");
-                    return (float)bankUser.Balance;
+                    _userService.balance = (float)bankUser.Balance;
+                    Console.WriteLine($"Loaded user: {supabaseService.GetClient().Auth.CurrentSession?.User?.Email} Balance: {_userService.balance}");
+                    return _userService.balance;
                 }
                 else
                 {
                     Console.WriteLine("Failed to load user balance.");
                 }
-                return _userService.balance;
+                return 0f; //means users balance was not found
             }
             catch (Exception ex)
             {
@@ -132,19 +147,30 @@ namespace BlazorBankingApp.Service
                 var user = response.Models.First();
                 Console.WriteLine($"Current balance: {user.Balance} - Services.AddToBalance");
                 user.Balance += (decimal)amountToAdd;
+
                 var updateResponse = await _supabaseClient
                     .From<BankUser>()
                     .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, userId)
                     .Update(user);
-                if (updateResponse != null && updateResponse.Models.Count > 0)
+
+                if (updateResponse != null)
                 {
-                    Console.WriteLine("Balance update successful. - Services.AddToBalance");
-                    _userService.balance = (float)user.Balance;
-                    return true;
+                    if (updateResponse.Models.Count > 0)
+                    {
+                        Console.WriteLine("Balance update successful. - Services.AddToBalance");
+                        _userService.balance = (float)user.Balance;
+                        return true;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Update response empty. - Services.AddToBalance");
+                        return false;
+                    }
+
                 }
                 else
                 {
-                    Console.WriteLine("Balance update failed - update response empty. - Services.AddToBalance");
+                    Console.WriteLine("Balance update failed - update response null. - Services.AddToBalance");
                     return false;
                 }
             }
@@ -154,5 +180,40 @@ namespace BlazorBankingApp.Service
                 return false;
             }
         }
+
+
+        public async Task<string> FetchName()
+        {
+            try
+            {
+                var session = _supabaseService.GetClient().Auth.CurrentSession;
+                if (session == null)
+                {
+                    throw new InvalidOperationException("User session is not available. Please log in again.");
+                }
+
+                BankUser bankUser = await _supabaseService.GetClient()
+                        .From<BankUser>()
+                        .Select("name")
+                        .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, _supabaseService.GetClient().Auth.CurrentSession?.User?.Id ?? throw new InvalidOperationException("User is not authenticated."))
+                        .Single();
+
+                if (bankUser != null)
+                {
+                    Console.WriteLine($"Loaded user: {_supabaseService.GetClient().Auth.CurrentSession?.User?.Email} Name: {bankUser.Name}");
+                    return bankUser.Name;
+                }
+                else
+                {
+                    Console.WriteLine("Failed to load user name.");
+                }
+                return _userService.name ?? "Name not found";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching name: {ex.Message}");
+                throw;
+            }
+        } 
     }
 }

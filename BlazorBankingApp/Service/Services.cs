@@ -164,30 +164,29 @@ public class SupabaseService : IDisposable
                 return null;
             }
 
-            // Check if the user already exists in the BankUsers table
-            var existingUser = await _supabaseClient
-                .From<BankUser>()
-                .Select("*")
-                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, authResponse.User.Id)
-                .Single();
-
-            if (existingUser != null)
-            {
-                Console.WriteLine("User already exists in BankUsers table.");
-                return authResponse.User;
-            }
-
-            // Insert new user into BankUsers table
+            // Prepare the BankUser object
             var user = new BankUser
             {
                 Id = authResponse.User.Id,
                 Name = displayName,
                 Phone = phone,
                 AuthorityLevel = authorityLevel,
-                Balance = 20000
+                Balance = 20000 // Default balance for new users
             };
 
-            var insertedUser = await _supabaseClient.From<BankUser>().Insert(user);
+            // Use Upsert to insert or update the user in the BankUsers table
+            var upsertedUser = await _supabaseClient
+                .From<BankUser>()
+                .Upsert(user);
+
+            if (upsertedUser == null || upsertedUser.Models.Count == 0)
+            {
+                Console.WriteLine("Failed to upsert user into BankUsers table.");
+            }
+            else
+            {
+                Console.WriteLine($"User upserted into BankUsers table: {upsertedUser.Models[0].Id}");
+            }
 
             // Save session for persistent login
             await SaveSession();

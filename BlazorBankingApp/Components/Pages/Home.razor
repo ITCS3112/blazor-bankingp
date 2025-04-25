@@ -20,11 +20,15 @@
         </p>
         <p class="balance-amount">@Balance.ToString("C2")</p>
     </div>
-    <button @onclick="TestTransfer">Send Test $1 Transfer</button>
+
     <div class="transaction-container">
         <p>
             <strong class="transaction-label">Transaction History:</strong>
         </p>
+    </div>
+
+    <div class="transfer-container" style="padding-left: 40%;">
+        <button class="btn btn-primary transfer-button" @onclick="TestTransfer">Send Test $1 Transfer</button>
     </div>
 
     @if (IsLoading)
@@ -35,14 +39,14 @@
     {
         <p style="color: red;">@ErrorMessage</p>
     }
-
 </div>
+
 @using System.Text.Json.Serialization
 
 @code {
     private float Balance { get; set; }
     private string ID => SupabaseService.GetClient().Auth.CurrentSession?.User?.Id?.ToString() ?? string.Empty;
-    private string Name {get; set; } = string.Empty;
+    private string Name { get; set; } = string.Empty;
     private bool IsLoading { get; set; }
     private string ErrorMessage { get; set; } = string.Empty;
 
@@ -58,7 +62,8 @@
         Balance = await DataService.FetchBalance();
     }
 
-    private async Task TestTransfer() {
+    private async Task TestTransfer()
+    {
         try
         {
             var session = SupabaseService.GetClient().Auth.CurrentSession;
@@ -79,8 +84,8 @@
             Balance = await DataService.FetchBalance(); // Refresh balance after transfer
 
             //Testing random transfer insertion
-            
-            
+
+
         }
         catch (Exception ex)
         {
@@ -90,36 +95,36 @@
 
     /*private async Task FetchBalance()
     {
-        try
-        {
-            
-            IsLoading = true;
+    try
+    {
 
-            var session = SupabaseService.GetClient().Auth.CurrentSession;
-            Console.WriteLine("Error Line 56 Home.razor");
-            if (session == null)
-            {
-                ErrorMessage = "User session is not available. Please log in again.";
-                return;
-            }
-            else
-            {
-                Console.WriteLine("Session is available.");
-            }
-            
-            await UserService.SetBalance();
-            Balance = UserService.balance;
-            
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"(In Home.razor) Error fetching balance: {ex.Message}";
-        }
-        finally
-        {
-            IsLoading = false;
-            StateHasChanged();
-        }
+    IsLoading = true;
+
+    var session = SupabaseService.GetClient().Auth.CurrentSession;
+    Console.WriteLine("Error Line 56 Home.razor");
+    if (session == null)
+    {
+    ErrorMessage = "User session is not available. Please log in again.";
+    return;
+    }
+    else
+    {
+    Console.WriteLine("Session is available.");
+    }
+
+    await UserService.SetBalance();
+    Balance = UserService.balance;
+
+    }
+    catch (Exception ex)
+    {
+    ErrorMessage = $"(In Home.razor) Error fetching balance: {ex.Message}";
+    }
+    finally
+    {
+    IsLoading = false;
+    StateHasChanged();
+    }
     }*/
 
 }
