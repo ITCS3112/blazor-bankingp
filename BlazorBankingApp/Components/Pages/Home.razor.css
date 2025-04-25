@@ -1,6 +1,6 @@
 .home-page-background {
-    
-    min-height: 50vh; 
+   
+    min-height: 50vh;
     display: flex;
     flex-direction: column;
     align-items: flex-start; /* Align items to the left */
@@ -8,12 +8,13 @@
     text-align: left; /* Align text to the left */
     padding-left: 20px; /* Add padding to create space from the left edge */
     font-size: large;
-} 
+}
+
 
 .home-page-logo {
     width: 250px; /* Adjust the width as needed */
     height: auto; /* Maintain the aspect ratio */
-    
+   
     margin-bottom: 20px; /* Space between the image and the text */
 }
 /* Style for the page title */
@@ -24,6 +25,7 @@ h1 {
     text-align: center;
 }
 
+
 /* Style for the description paragraph */
 p {
     font-size: 1.2em;
@@ -31,6 +33,7 @@ p {
     margin-bottom: 20px;
     text-align: center;
 }
+
 
 .button-container {
     display: flex;
@@ -44,6 +47,7 @@ button.btn {
     font-size: 1em;
 }
 
+
 /* Primary button style */
 button.btn-primary {
     background-color: #007bff;
@@ -51,11 +55,13 @@ button.btn-primary {
     color: white;
 }
 
+
 /* Hover effect for primary button */
 button.btn-primary:hover {
     background-color: #0056b3;
     border-color: #004085;
 }
+
 
 .balance-container {
     background: #49269a; /* Purple background */
@@ -70,16 +76,19 @@ button.btn-primary:hover {
     font-size: 1.2em; /* Slightly larger font size for the text */
 }
 
+
 .balance-amount {
     font-size: 1.5em; /* Larger font size for the balance */
     font-weight: bold; /* Make the balance bold */
     color: #ffffff; /* Green color for the balance */
 }
 
+
 .balance-label {
     color: #ffffff; /* Replace with your desired color (e.g., orange) */
     font-weight: bold; /* Optional: Keep the text bold */
 }
+
 
 .transaction-container {
     background: #49269a; /* Purple background */
@@ -94,8 +103,43 @@ button.btn-primary:hover {
     font-size: 1.2em; /* Slightly larger font size for the text */
 }
 
+
 .transaction-label {
     color: #ffffff; /* Replace with your desired color (e.g., orange) */
     font-weight: bold; /* Optional: Keep the text bold */
 }
+.transaction-list {
+    list-style-type: none;
+    padding: 0;
+}
 
+
+.transaction-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+
+.transaction-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+
+.negative-amount {
+    color: #ff6b6b;
+}
+
+
+.positive-amount {
+    color: #51cf66;
+}
+
+
+.transaction-details {
+    font-size: 0.9em;
+    color: #adb5bd;
+}
