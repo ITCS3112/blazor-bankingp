@@ -2,6 +2,7 @@
 
 @rendermode InteractiveServer
 @inject Services.SupabaseService SupabaseService
+@inject Service.DataService DataService
 @inject Services.UserService UserService
 @inject NavigationManager Navigation
 @using Supabase;
@@ -11,7 +12,6 @@
 
 <div class="loan-page-background">
     <h1>Loan Application</h1>
-
     @if (IsLoading)
     {
         <p>Loading...</p>
@@ -20,7 +20,6 @@
     {
         <p style="color: red;">@ErrorMessage</p>
     }
-
 </div>
 <div class="loan-selection-list">
     <h3><strong>Check Out Our Loans:</strong></h3>
@@ -32,7 +31,12 @@
                 <p>Loan Amount: $10,000</p>
                 <p>Loan Term: 5 years</p>
             </div>
-            <button class="btn btn-primary">Apply Now</button>
+            <button id="personalLoan" class="btn btn-primary" @onclick="@(() => ApplyForLoan("personalLoan"))"
+                disabled="@LoanSelected">Apply Now</button>
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <div class="alert mt-3" style="color: red;">@ErrorMessage</div>
+            }
         </li>
         <li class="loan-item">
             <div class="loan-item-content">
@@ -41,7 +45,8 @@
                 <p>Loan Amount: $200,000</p>
                 <p>Loan Term: 30 years</p>
             </div>
-            <button class="btn btn-primary">Apply Now</button>
+            <button class="btn btn-primary" @onclick="@(() => ApplyForLoan("homeLoan"))" disabled="@LoanSelected">Apply
+                Now</button>
         </li>
         <li class="loan-item">
             <div class="loan-item-content">
@@ -50,7 +55,8 @@
                 <p>Loan Amount: $25,000</p>
                 <p>Loan Term: 5 years</p>
             </div>
-            <button class="btn btn-primary">Apply Now</button>
+            <button class="btn btn-primary" @onclick="@(() => ApplyForLoan("carLoan"))" disabled="@LoanSelected">Apply
+                Now</button>
         </li>
         <li class="loan-item">
             <div class="loan-item-content">
@@ -59,7 +65,8 @@
                 <p>Loan Amount: $50,000</p>
                 <p>Loan Term: 10 years</p>
             </div>
-            <button class="btn btn-primary">Apply Now</button>
+            <button class="btn btn-primary" @onclick="@(() => ApplyForLoan("studentLoan"))"
+                disabled="@LoanSelected">Apply Now</button>
         </li>
         <li class="loan-item">
             <div class="loan-item-content">
@@ -68,40 +75,44 @@
                 <p>Loan Amount: $100,000</p>
                 <p>Loan Term: 10 years</p>
             </div>
-            <button class="btn btn-primary">Apply Now</button>
+            <button class="btn btn-primary" @onclick="@(() => ApplyForLoan("businessLoan"))"
+                disabled="@LoanSelected">Apply Now</button>
         </li>
     </ul>
 </div>
-
 <style>
+    .alert mt-3 {
+        color: red;
+        margin-top: 20px;
+        font-size: 16px;
+        background-color: #cfa2ea;
+        background-opacity: 0.25;
+        border-radius: 5px;
+    }
     .loan-page-background {
         background-color: #f0f0f0;
         padding: 20px;
         border-radius: 8px;
         margin: 20px;
     }
-
     .loan-selection-list {
         margin-top: 20px;
-        list-style-type: none; /* Removes bullet points */
-        padding: 0; /* Removes default padding */
+        list-style-type: none;
+        padding: 0;
     }
-
     .loan-item {
         background-color: #fff;
         padding: 15px;
         border-radius: 5px;
         margin-bottom: 10px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        display: flex; /* Use flexbox for alignment */
-        justify-content: space-between; /* Space between content and button */
-        align-items: center; /* Vertically align items */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
-
     .loan-item-content {
-        flex: 1; /* Allow content to take up available space */
+        flex: 1;
     }
-
     .btn.btn-primary {
         font-size: 16px;
         font-weight: bold;
@@ -114,24 +125,75 @@
     }
 </style>
 
-@code
-{    
+
+@code {
+    
     private float Balance { get; set; }
     private string ID => SupabaseService.GetClient().Auth.CurrentSession?.User?.Id?.ToString() ?? string.Empty;
     private bool IsLoading { get; set; }
     private string ErrorMessage { get; set; } = string.Empty;
+    private bool LoanSelected { get; set; } = false;
+    Loan loan = new Loan();
 
     protected override async Task OnInitializedAsync()
     {
         var session = SupabaseService.GetClient().Auth.CurrentSession;
-
         await UserService.SetBalance();
         Balance = UserService.balance;
-
         if (session == null)
         {
             ErrorMessage = "Please log in to view your balance.";
             return;
         }
+    }
+
+    class Loan
+    {
+        public string LoanType { get; set; }
+        public float InterestRate { get; set; }
+        public float LoanAmount { get; set; }
+        public int LoanTerm { get; set; }
+    }
+    private async Task ApplyForLoan(string loanType)
+    {
+        IsLoading = true;
+        try
+        {
+            loan = loanType switch
+            {
+                "personalLoan" => new Loan { LoanType = "Personal Loan", InterestRate = 5, LoanAmount = 10000, LoanTerm = 5 },
+                "homeLoan" => new Loan { LoanType = "Home Loan", InterestRate = 3, LoanAmount = 200000, LoanTerm = 30 },
+                "carLoan" => new Loan { LoanType = "Car Loan", InterestRate = 4, LoanAmount = 25000, LoanTerm = 5 },
+                "studentLoan" => new Loan { LoanType = "Student Loan", InterestRate = 6, LoanAmount = 50000, LoanTerm = 10 },
+                "businessLoan" => new Loan { LoanType = "Business Loan", InterestRate = 7, LoanAmount = 100000, LoanTerm = 10 },
+                _ => throw new ArgumentException("Invalid loan type - Loans.razor")
+            };
+            var success = await DataService.AddToBalance(loan.LoanAmount);
+
+            if (success)
+            {
+                ErrorMessage = "Loan application successful!";
+                LoanSelected = true;
+                await Task.Delay(3000);
+                Navigation.NavigateTo("/home");
+            }
+            else
+            {
+                ErrorMessage = "Loan application failed. - Loans.razor";
+            }
+            LoanSelected = true;
+            
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"An error occurred: {ex.Message} - Loans.razor";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+        await Task.Delay(5000);
+        await Task.Delay(3000);
+        Navigation.NavigateTo("/home");
     }
 }

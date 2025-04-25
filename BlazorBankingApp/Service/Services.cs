@@ -41,6 +41,8 @@ public class UserService
         id = bankUser.Id;
         balance = (float)bankUser.Balance;
         authoritylevel = bankUser.AuthorityLevel;
+        name = bankUser.Name;
+        phone = bankUser.Phone;
 
         CurrentUser = bankUser;
         Console.WriteLine($"Loaded user: {email}, Balance: {balance}");
@@ -86,7 +88,7 @@ public class UserService
 
     public async Task SetBalance()
     {
-        
+
         using var supabaseService = new SupabaseService();
         await supabaseService.RestoreSession();
         if (supabaseService.GetClient().Auth.CurrentSession == null)
@@ -128,7 +130,7 @@ public class SupabaseService : IDisposable
         var options = new SupabaseOptions { AutoConnectRealtime = true };
         _supabaseClient = new Supabase.Client(url, key, options);
 
-        // 🔹 Restore session at startup
+        // Restore session at startup
         Task.Run(async () =>
         {
             await _supabaseClient.InitializeAsync();
@@ -137,7 +139,7 @@ public class SupabaseService : IDisposable
 
         Console.WriteLine(" Supabase Client initialized.");
 
-        // 🔹 PostgreSQL Database Connection Setup
+        //PostgreSQL Database Connection Setup
         var uri = new Uri(databaseUrl);
         var userInfo = uri.UserInfo.Split(':');
         string connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SslMode=Require;Trust Server Certificate=true;";
@@ -150,30 +152,22 @@ public class SupabaseService : IDisposable
     public Supabase.Client GetClient() => _supabaseClient;
     public NpgsqlConnection GetConnection() => _dbConnection;
 
-    public async Task<Supabase.Gotrue.User?> SignUpUser(string email, string password, string displayName, string phone)
+    public async Task<Supabase.Gotrue.User?> SignUpUser(string email, string password, string displayName, string phone)    
     {
         try
         {
-            Console.WriteLine($" Signing up user: {email}");
-            var options = new SignUpOptions
+         
+            var authResponse = await _supabaseClient.Auth.SignUp(email.Trim(), password);
+
+            // Insert new user into auth.users table
+            var user = new BankUser
             {
-                Data = new Dictionary<string, object>
-                {
-                    { "name", (object?)displayName ?? ""},
-                    { "phone", (object?)phone ?? ""}
-                }
+                Name = displayName,
+                Phone = phone
             };
 
-            if (_supabaseClient == null)
-            {
-                throw new InvalidOperationException("Supabase client is not initialized.");
-            } else {
-                Console.WriteLine($" Supabase client is initialized {_supabaseClient.ToString}.");
-            }
-            Console.WriteLine($"Email: {email}, Password: {password}, DisplayName: {displayName}, Phone: {phone}");
+            var insertedUser = await _supabaseClient.From<BankUser>().Insert(user);
 
-            var authResponse = await _supabaseClient.Auth.SignUp(email.Trim(), password, options);
-            Console.WriteLine("AuthResponse received");
 
             if (authResponse.User == null)
             {
@@ -182,7 +176,6 @@ public class SupabaseService : IDisposable
             }
             // 🔹 Save session for persistent login
             await SaveSession();
-
             Console.WriteLine($" User signed up successfully: {authResponse.User.Email}");
             return authResponse.User;
         }
@@ -194,7 +187,7 @@ public class SupabaseService : IDisposable
     }
 
 
-    // 🔹 Save session manually after login
+    // Save session manually after login
     public async Task SaveSession()
     {
         var session = _supabaseClient.Auth.CurrentSession;
@@ -206,7 +199,7 @@ public class SupabaseService : IDisposable
         }
     }
 
-    // 🔹 Restore session manually at startup
+    // Restore session manually at startup
     public async Task RestoreSession()
     {
         try

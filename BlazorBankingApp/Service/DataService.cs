@@ -43,7 +43,7 @@ namespace BlazorBankingApp.Service
                 {
                     Console.WriteLine("Failed to load user balance.");
                 }
-            return _userService.balance;
+                return _userService.balance;
             }
             catch (Exception ex)
             {
@@ -78,7 +78,7 @@ namespace BlazorBankingApp.Service
                 {
                     Console.WriteLine("Failed to load user authority level.");
                 }
-            return _userService.authoritylevel;
+                return _userService.authoritylevel;
             }
             catch (Exception ex)
             {
@@ -106,5 +106,53 @@ namespace BlazorBankingApp.Service
                 throw;
             }
         }*/
+
+        public async Task<bool> AddToBalance(float amountToAdd)
+        {
+            var _supabaseClient = _supabaseService.GetClient();
+
+            try
+            {
+                var userId = _supabaseClient.Auth.CurrentSession?.User?.Id;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    Console.WriteLine("User is not authenticated. - Services.AddToBalance");
+                    return false;
+                }
+                Console.WriteLine($"Supabase Auth ID: {userId} - Services.AddToBalance");
+                var response = await _supabaseClient
+                    .From<BankUser>()
+                    .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, userId)
+                    .Get();
+                if (response.Models == null || !response.Models.Any())
+                {
+                    Console.WriteLine("No user model found for given ID. - Services.AddToBalance");
+                    return false;
+                }
+                var user = response.Models.First();
+                Console.WriteLine($"Current balance: {user.Balance} - Services.AddToBalance");
+                user.Balance += (decimal)amountToAdd;
+                var updateResponse = await _supabaseClient
+                    .From<BankUser>()
+                    .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, userId)
+                    .Update(user);
+                if (updateResponse != null && updateResponse.Models.Count > 0)
+                {
+                    Console.WriteLine("Balance update successful. - Services.AddToBalance");
+                    _userService.balance = (float)user.Balance;
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine("Balance update failed - update response empty. - Services.AddToBalance");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating balance: {ex.Message} - Services.AddToBalance");
+                return false;
+            }
+        }
     }
 }
