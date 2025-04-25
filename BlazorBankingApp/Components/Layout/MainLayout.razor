@@ -18,18 +18,21 @@
         {
             <div class="top-row px-4">
                 <div class="name">
-                    @if (string.IsNullOrEmpty(Email))
+                    @if (string.IsNullOrEmpty(Name))
                     {
                         <span class="name">Welcome, Guest</span>
                     }
                     else
                     {
                         <span class="name">Welcome, @Name</span>
-                    }   
-                </div>               
+                    }
+                </div>
 
-                <a href="#" @onclick="Logout">Logout</a>
-                <a href="/about" target="_blank">About</a>
+                <div class="top-row-buttons">
+                    <a href="#" @onclick="Logout" class="btn-link">Logout</a>
+                    <a href="/about" target="_blank" class="btn-link">About</a>
+                    
+                </div>
             </div>
 
 

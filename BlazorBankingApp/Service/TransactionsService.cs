@@ -83,43 +83,84 @@ public class TransactionsService
 
 
     public async Task<List<Transaction>> GetTransactionsAsync(Guid userId)
+{
+    try
     {
-        Console.WriteLine($"GetTransactionsAsync called for user: {userId}");
-        try
+        // Get transactions where user is the sender
+        var senderTransactions = await _supabase
+            .From<Transaction>()
+            .Filter("sender_id", Supabase.Postgrest.Constants.Operator.Equals, userId.ToString())
+            .Get();
+            
+        // Get transactions where user is the receiver
+        var receiverTransactions = await _supabase
+            .From<Transaction>()
+            .Filter("receiver_id", Supabase.Postgrest.Constants.Operator.Equals, userId.ToString())
+            .Get();
+            
+        // Combine the results
+        var combined = new List<Transaction>();
+        combined.AddRange(senderTransactions.Models);
+        combined.AddRange(receiverTransactions.Models);
+        
+        // Sort by timestamp (most recent first)
+        var orderedTransactions = combined.OrderByDescending(t => t.Timestamp).ToList();
+        
+        // Collect all unique user IDs that we need to look up
+        var userIds = new HashSet<Guid>();
+        foreach (var transaction in orderedTransactions)
         {
-            var senderTransactions = await _supabase
-                .From<Transaction>()
-                .Filter("sender_id", Supabase.Postgrest.Constants.Operator.Equals, userId.ToString())
-                .Get();
-
-
-            Console.WriteLine($"Found {senderTransactions.Models.Count} sender transactions");
-           
-            var receiverTransactions = await _supabase
-                .From<Transaction>()
-                .Filter("receiver_id", Supabase.Postgrest.Constants.Operator.Equals, userId.ToString())
-                .Get();
-           
-            Console.WriteLine($"Found {receiverTransactions.Models.Count} receiver transactions");
-
-
-            var combined = new List<Transaction>();
-            combined.AddRange(senderTransactions.Models);
-            combined.AddRange(receiverTransactions.Models);
-
-
-            foreach (var transaction in combined)
+            userIds.Add(transaction.SenderId);
+            userIds.Add(transaction.ReceiverId);
+        }
+        
+        // Create a dictionary to store user names
+        var userNames = new Dictionary<Guid, string>();
+        
+        // Fetch user names for each unique ID
+        foreach (var id in userIds)
+        {
+            try
             {
-               
+                var userResponse = await _supabase
+                    .From<BankUser>()
+                    .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id.ToString())
+                    .Get();
+                
+                var user = userResponse.Models.FirstOrDefault();
+                if (user != null && !string.IsNullOrEmpty(user.Name))
+                {
+                    userNames[id] = user.Name;
+                }
+                else
+                {
+                    userNames[id] = $"User {id.ToString().Substring(0, 8)}";
+                }
             }
-       
-            return combined.OrderByDescending(t => t.Timestamp).ToList();
+            catch
+            {
+                userNames[id] = $"User {id.ToString().Substring(0, 8)}";
+            }
         }
-        catch (Exception ex)
+        
+        // Add name properties to each transaction
+        foreach (var transaction in orderedTransactions)
         {
-            Console.WriteLine($"Error fetching transactions in TransactionsService: {ex.Message}");
-            Console.WriteLine($"Stack trace: {ex.StackTrace}");
-            return new List<Transaction>();
+            transaction.SenderName = userNames.ContainsKey(transaction.SenderId) 
+                ? userNames[transaction.SenderId] 
+                : $"User {transaction.SenderId.ToString().Substring(0, 8)}";
+                
+            transaction.ReceiverName = userNames.ContainsKey(transaction.ReceiverId)
+                ? userNames[transaction.ReceiverId]
+                : $"User {transaction.ReceiverId.ToString().Substring(0, 8)}";
         }
+        
+        return orderedTransactions;
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error fetching transactions: {ex.Message}");
+        return new List<Transaction>();
+    }
+}
 }

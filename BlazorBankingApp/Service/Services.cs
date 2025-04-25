@@ -153,52 +153,77 @@ public class SupabaseService : IDisposable
     public NpgsqlConnection GetConnection() => _dbConnection;
 
     public async Task<Supabase.Gotrue.User?> SignUpUser(string email, string password, string displayName, string phone, string authorityLevel)
+{
+    try
     {
-        try
+        // First just do a plain signup
+        var authResponse = await _supabaseClient.Auth.SignUp(email.Trim(), password);
+
+        if (authResponse.User == null)
         {
-            var authResponse = await _supabaseClient.Auth.SignUp(email.Trim(), password);
-
-            if (authResponse.User == null)
-            {
-                Console.WriteLine("Signup failed.");
-                return null;
-            }
-
-            // Prepare the BankUser object
-            var user = new BankUser
-            {
-                Id = authResponse.User.Id,
-                Name = displayName,
-                Phone = phone,
-                AuthorityLevel = authorityLevel,
-                Balance = 20000 // Default balance for new users
-            };
-
-            // Use Upsert to insert or update the user in the BankUsers table
-            var upsertedUser = await _supabaseClient
-                .From<BankUser>()
-                .Upsert(user);
-
-            if (upsertedUser == null || upsertedUser.Models.Count == 0)
-            {
-                Console.WriteLine("Failed to upsert user into BankUsers table.");
-            }
-            else
-            {
-                Console.WriteLine($"User upserted into BankUsers table: {upsertedUser.Models[0].Id}");
-            }
-
-            // Save session for persistent login
-            await SaveSession();
-            Console.WriteLine($"User signed up successfully: {authResponse.User.Email}");
-            return authResponse.User;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error signing up: {ex.Message}");
+            Console.WriteLine("Signup failed.");
             return null;
         }
+
+        // Wait a moment for the trigger to run
+        await Task.Delay(500);
+
+        try {
+            // Now update the BankUser with the additional fields
+            Console.WriteLine($"Updating user with ID: {authResponse.User.Id}");
+            
+            // First check if the user exists
+            var existingUserResp = await _supabaseClient
+                .From<BankUser>()
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, authResponse.User.Id)
+                .Get();
+                
+            var existingUser = existingUserResp.Models.FirstOrDefault();
+            
+            if (existingUser != null) {
+                // Update existing user
+                existingUser.Name = displayName;
+                existingUser.Phone = phone;
+                existingUser.AuthorityLevel = authorityLevel;
+                existingUser.Balance = 20000;
+                
+                await _supabaseClient
+                    .From<BankUser>()
+                    .Update(existingUser);
+                    
+                Console.WriteLine("User updated successfully");
+            } else {
+                // Insert new user if trigger didn't work
+                var newUser = new BankUser {
+                    Id = authResponse.User.Id ?? throw new InvalidOperationException("User ID cannot be null"),
+                    Name = displayName,
+                    Phone = phone,
+                    AuthorityLevel = authorityLevel,
+                    Balance = 20000
+                };
+                
+                await _supabaseClient
+                    .From<BankUser>()
+                    .Insert(newUser);
+                    
+                Console.WriteLine("User inserted successfully");
+            }
+        } catch (Exception ex) {
+            // Log but don't fail if there's an issue updating the BankUser
+            Console.WriteLine($"Error updating BankUser: {ex.Message}");
+        }
+
+        // Save auth session
+        await SaveSession();
+        Console.WriteLine($"User signed up successfully: {authResponse.User.Email}");
+        return authResponse.User;
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error signing up: {ex.Message}");
+        return null;
+    }
+}
 
 
     // Save session manually after login

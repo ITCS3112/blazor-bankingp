@@ -141,5 +141,52 @@ button.btn-primary:hover {
 
 .transaction-details {
     font-size: 0.9em;
-    color: #adb5bd;
+    color: #bbbbbb;
+}
+.transaction-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.transaction-item {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.transaction-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.transaction-date {
+    font-size: 0.9em;
+    color: #aaa;
+}
+
+.sent-amount {
+    color: #f87171;
+}
+
+.received-amount {
+    color: #34d399;
+}
+
+.user-name {
+    font-weight: bold;
+}
+
+.amount {
+    font-weight: bold;
+}
+
+.transaction-sent {
+    color: #f87171; /* Red color for sent transactions */
+}
+
+.transaction-received {
+    color: #34d399; /* Green color for received transactions */
 }

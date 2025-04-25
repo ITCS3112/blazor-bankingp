@@ -23,10 +23,12 @@ main {
     /*background-color: #f7f7f7;*/
     background: linear-gradient(90deg, rgb(5, 39, 103) 0%, #3a0647 70%);
     border-bottom: 1px solid #d6d5d5;
-    justify-content: flex-end;
+    justify-content: space-between; /* Distribute space between elements */
     height: 3.5rem;
     display: flex;
-    align-items: center;
+    align-items: center; /* Vertically center the content */
+    padding: 0 1rem; /* Add padding to prevent content from touching edges */
+    overflow: hidden; /* Prevent horizontal overflow */
 }
 
     .top-row ::deep a, .top-row ::deep .btn-link {
@@ -105,10 +107,9 @@ main.home-page {
     height: auto; /* Maintain the aspect ratio */
     opacity: 0.5;
 }
-.username {
+.name {
     font-size: 1.2em;
     color: #fff;
-    margin-right: 40rem; /* Adjust spacing between username and other elements */
     white-space: nowrap; /* Prevent text from wrapping */
     overflow: hidden; /* Prevent text overflow */
     text-overflow: ellipsis; /* Add ellipsis if the text is too long */
@@ -134,4 +135,18 @@ main.home-page {
         position: absolute;
         right: 0.75rem;
         top: 0.5rem;
+    }
+
+    .top-row-buttons {
+        display: flex;
+        gap: 1rem; /* Add spacing between buttons */
+    }
+    
+    .top-row-buttons .btn-link {
+        text-decoration: none; /* Remove underline */
+        font-size: 1rem; /* Adjust font size */
+    }
+    
+    .top-row-buttons .btn-link:hover {
+        text-decoration: underline; /* Add underline on hover */
     }

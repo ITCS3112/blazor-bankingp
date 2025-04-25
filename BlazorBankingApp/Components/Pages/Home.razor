@@ -22,7 +22,9 @@
         </p>
         <p class="balance-amount">@Balance.ToString("C2")</p>
     </div>
-    <button @onclick="TestTransfer">Send Test $1 Transfer</button>
+    <div button-container>
+        <button class="transfer-button" @onclick="TestTransfer">Transfer</button>
+    </div>
     <div class="transaction-container">
         <h3 class="transaction-label">Transaction History</h3>
         @if (transactions == null || !transactions.Any())
@@ -33,25 +35,26 @@
         {
             <ul class="transaction-list">
                 @foreach (var transaction in transactions)
-                {
-                    <li class="transaction-item @GetTransactionClass(transaction)">
-                        <div class="transaction-header">
-                        <span class="transaction-date">@ConvertToEST(transaction.Timestamp)</span>                            <span class="transaction-amount @GetAmountClass(transaction)">
-                                @FormatTransactionAmount(transaction)
-                            </span>
-                        </div>
-                        <div class="transaction-details">
-                            @if (IsUserSender(transaction))
-                            {
-                                <span>Sent to: @GetSimplifiedId(transaction.ReceiverId)</span>
-                            }
-                            else
-                            {
-                                <span>Received from: @GetSimplifiedId(transaction.SenderId)</span>
-                            }
-                        </div>
-                    </li>
-                }
+            {
+                <li class="transaction-item">
+                    <div class="transaction-header">
+                        <span class="transaction-date">@transaction.Timestamp.ToString("MMM dd, yyyy HH:mm")</span>
+                        <span class="transaction-amount @GetAmountClas(transaction)">
+                            @FormatAmount(transaction)
+                        </span>
+                    </div>
+                    <div class="transaction-details">
+                        @if (IsCurrentUser(transaction.SenderId))
+                        {
+                            <p class="transaction-sent">You sent <span class="amount">@transaction.Amount.ToString("C2")</span> to <span class="user-name">@transaction.ReceiverName</span></p>
+                        }
+                        else
+                        {
+                            <p class="transaction-received">You received <span class="amount">@transaction.Amount.ToString("C2")</span> from <span class="user-name">@transaction.SenderName</span></p>
+                        }
+                    </div>
+                </li>
+            }
             </ul>
         }
     </div>
@@ -110,7 +113,7 @@
 
             var senderId = Guid.Parse(session.User.Id);
             decimal amount = 1.00M; // Example amount to transfer
-            var recipientId = Guid.Parse("37d15e73-6a2a-41eb-8efe-3b26f59db7b1"); // Replace with actual recipient ID
+            var recipientId = Guid.Parse("15d4d672-03cc-4b24-8429-88b8bbbdd9a8"); // Replace with actual recipient ID
             Console.WriteLine($"Sender ID: {senderId}");
             Console.WriteLine($"Recipient ID: {recipientId}");
             Console.WriteLine($"Amount: {amount}");
@@ -214,6 +217,23 @@
         Console.WriteLine($"Error converting time to EST: {ex.Message}");
         return utcTime.ToString("MMM dd, yyyy HH:mm"); // Fallback to UTC
     }
+}
+private bool IsCurrentUser(Guid userId)
+{
+    var currentUserId = SupabaseService.GetClient().Auth.CurrentSession?.User?.Id;
+    return userId.ToString() == currentUserId;
+}
+
+private string GetAmountClas(Transaction transaction)
+{
+    return IsCurrentUser(transaction.SenderId) ? "sent-amount" : "received-amount";
+}
+
+private string FormatAmount(Transaction transaction)
+{
+    return IsCurrentUser(transaction.SenderId) 
+        ? $"-${transaction.Amount:F2}" 
+        : $"+${transaction.Amount:F2}";
 }
 
 
