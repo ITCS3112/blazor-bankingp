@@ -20,4 +20,7 @@ public class BankUser : BaseModel
 
     [Supabase.Postgrest.Attributes.Column("phone")]
     public string Phone { get; set; }
+
+    [Supabase.Postgrest.Attributes.Column("email")]
+    public string Email { get; set; }
 }

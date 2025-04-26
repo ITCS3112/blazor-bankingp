@@ -156,7 +156,6 @@ public class SupabaseService : IDisposable
 {
     try
     {
-        // First just do a plain signup
         var authResponse = await _supabaseClient.Auth.SignUp(email.Trim(), password);
 
         if (authResponse.User == null)
@@ -165,56 +164,65 @@ public class SupabaseService : IDisposable
             return null;
         }
 
-        // Wait a moment for the trigger to run
+        // Save session immediately
+        await SaveSession();
+        
+        // Wait a moment (optional small delay)
         await Task.Delay(500);
 
-        try {
-            // Now update the BankUser with the additional fields
-            Console.WriteLine($"Updating user with ID: {authResponse.User.Id}");
-            
-            // First check if the user exists
+        var userId = authResponse.User.Id ?? throw new InvalidOperationException("User ID cannot be null");
+        var userEmail = authResponse.User.Email ?? email; // <--- use auth user email, or fallback to original
+
+        try
+        {
+            // Check if BankUser exists already
             var existingUserResp = await _supabaseClient
                 .From<BankUser>()
-                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, authResponse.User.Id)
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, userId)
                 .Get();
-                
-            var existingUser = existingUserResp.Models.FirstOrDefault();
             
-            if (existingUser != null) {
-                // Update existing user
+            var existingUser = existingUserResp.Models.FirstOrDefault();
+
+            if (existingUser != null)
+            {
+                // Update existing BankUser
                 existingUser.Name = displayName;
                 existingUser.Phone = phone;
                 existingUser.AuthorityLevel = authorityLevel;
                 existingUser.Balance = 20000;
-                
+                existingUser.Email = userEmail; // <-- use userEmail now
+
                 await _supabaseClient
                     .From<BankUser>()
                     .Update(existingUser);
                     
                 Console.WriteLine("User updated successfully");
-            } else {
-                // Insert new user if trigger didn't work
-                var newUser = new BankUser {
-                    Id = authResponse.User.Id ?? throw new InvalidOperationException("User ID cannot be null"),
+            }
+            else
+            {
+                // Insert new BankUser
+                var newUser = new BankUser
+                {
+                    Id = userId,
                     Name = displayName,
                     Phone = phone,
                     AuthorityLevel = authorityLevel,
-                    Balance = 20000
+                    Balance = 20000,
+                    Email = userEmail // <-- use userEmail now
                 };
-                
+
                 await _supabaseClient
                     .From<BankUser>()
                     .Insert(newUser);
                     
-                Console.WriteLine("User inserted successfully");
+                Console.WriteLine("BankUser inserted successfully");
             }
-        } catch (Exception ex) {
-            // Log but don't fail if there's an issue updating the BankUser
+        }
+        catch (Exception ex)
+        {
             Console.WriteLine($"Error updating BankUser: {ex.Message}");
         }
 
-        // Save auth session
-        await SaveSession();
         Console.WriteLine($"User signed up successfully: {authResponse.User.Email}");
         return authResponse.User;
     }
@@ -224,6 +232,7 @@ public class SupabaseService : IDisposable
         return null;
     }
 }
+
 
 
     // Save session manually after login
@@ -264,6 +273,17 @@ public class SupabaseService : IDisposable
             Console.WriteLine($" Failed to restore session: {ex.Message}");
         }
     }
+
+    public async Task<BankUser> FindUserByEmailAsync(string email)
+{
+    var user = await _supabaseClient
+        .From<BankUser>()
+        .Filter("email", Supabase.Postgrest.Constants.Operator.Equals, email)
+        .Single();
+
+    return user;
+}
+
 
     public void Dispose()
     {

@@ -1,0 +1,140 @@
+@page "/transfer"
+@rendermode InteractiveServer
+@inject Services.SupabaseService SupabaseService
+@inject Services.UserService UserService
+@inject NavigationManager Navigation
+@inject DataService DataService
+@inject TransactionsService TransactionsService
+@using Supabase;
+@using Supabase.Postgrest.Models;
+@using static Supabase.Postgrest.Constants;
+@using Supabase.Postgrest.Extensions;
+@using BlazorBankingApp.Service;
+@using System.ComponentModel.DataAnnotations;
+
+
+<PageTitle>Transfer</PageTitle>
+<div class="transfer-page-background">
+    <div class="transfer-container">
+        <p> <strong class="transfer-label">Transfer Money</strong></p>
+        <EditForm Model="@transferModel" OnValidSubmit="@HandleTransfer">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="receiverEmail" class="form-label">Recipient Email</label>
+        <InputText id="receiverEmail" class="form-control" @bind-Value="transferModel.ReceiverEmail" />
+    </div>
+
+    <div class="mb-3">
+        <label for="amount" class="form-label">Amount</label>
+        <InputNumber id="amount" class="form-control" @bind-Value="transferModel.Amount" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Send Money</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert alert-info mt-3">@statusMessage</div>
+}
+    </div>
+        
+</div>
+
+@code {
+    private TransferModel transferModel = new();
+    private string statusMessage;
+    private string ErrorMessage;
+    protected override async Task OnInitializedAsync()
+    {
+        var session = SupabaseService.GetClient().Auth.CurrentSession;
+        if (session == null)
+        {
+            ErrorMessage = "Please log in ";
+            return;
+        }
+
+    }
+
+    private async Task HandleTransfer()
+    {
+        var session = SupabaseService.GetClient().Auth.CurrentSession;
+        if (session == null)
+        {
+            statusMessage = "Please log in first.";
+            return;
+        }
+
+        try
+        {
+            // senderId from session
+            var senderId = session.User.Id;
+            if (string.IsNullOrEmpty(senderId))
+            {
+                statusMessage = "Invalid session.";
+                return;
+            }
+
+            // Fetch sender full BankUser profile
+            var sender = await SupabaseService.GetClient()
+                .From<BankUser>()
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, senderId)
+                .Single();
+
+            if (sender == null)
+            {
+                statusMessage = "Sender profile not found.";
+                return;
+            }
+
+            // Find receiver by email
+            var receiver = await SupabaseService.GetClient()
+                .From<BankUser>()
+                .Filter("email", Supabase.Postgrest.Constants.Operator.Equals, transferModel.ReceiverEmail)
+                .Single();
+
+            if (receiver == null)
+            {
+                statusMessage = "Recipient not found.";
+                return;
+            }
+
+            if (transferModel.Amount <= 0)
+            {
+                statusMessage = "Transfer amount must be positive.";
+                return;
+            }
+
+            if (sender.Balance < transferModel.Amount)
+            {
+                statusMessage = "Insufficient funds.";
+                return;
+            }
+
+            // Perform the transfer
+            TransactionsService.SendTransactionAsync(Guid.Parse(senderId), Guid.Parse(receiver.Id), transferModel.Amount);
+            /*sender.Balance -= transferModel.Amount;
+            receiver.Balance += transferModel.Amount;*/
+
+            await SupabaseService.GetClient().From<BankUser>().Update(sender);
+            await SupabaseService.GetClient().From<BankUser>().Update(receiver);
+
+            statusMessage = $"Successfully sent ${transferModel.Amount} to {transferModel.ReceiverEmail}!";
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    public class TransferModel
+    {
+        [Required]
+        public string ReceiverEmail { get; set; }
+
+        [Required]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be positive.")]
+        public decimal Amount { get; set; }
+    }
+}
