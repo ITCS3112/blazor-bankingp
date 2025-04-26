@@ -146,19 +146,10 @@
 
 
             var userId = Guid.Parse(session.User.Id);
-            Console.WriteLine($"Fetching transactions for user ID: {userId}");
             transactions = await TransactionsService.GetTransactionsAsync(userId);
             if (transactions == null)
             {
                 Console.WriteLine("Transactions result is null");
-            }
-            else
-            {
-                Console.WriteLine($"Fetched {transactions.Count} transactions");
-                foreach (var tx in transactions)
-                {
-                    Console.WriteLine($"Transaction: {tx.Id}, Amount: {tx.Amount}, Timestamp: {tx.Timestamp}");
-                }
             }
             StateHasChanged();
         }

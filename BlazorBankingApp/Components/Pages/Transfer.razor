@@ -46,6 +46,9 @@
     private TransferModel transferModel = new();
     private string statusMessage;
     private string ErrorMessage;
+    private string RecipientEmail { get; set; } = string.Empty;
+    private List<string> AllRelevantRecipients { get; set; } = new();
+    private List<string> FilteredRecipients { get; set; } = new();
     protected override async Task OnInitializedAsync()
     {
         var session = SupabaseService.GetClient().Auth.CurrentSession;
@@ -54,6 +57,13 @@
             ErrorMessage = "Please log in ";
             return;
         }
+        var sentTo = await TransactionsService.GetSentEmails(Guid.Parse(session.User.Id));
+    var receivedFrom = await TransactionsService.GetReceivedEmails(Guid.Parse(session.User.Id));
+
+    AllRelevantRecipients = sentTo
+        .Concat(receivedFrom)
+        .Distinct()
+        .ToList();
 
     }
 
@@ -127,6 +137,19 @@
             statusMessage = $"Error: {ex.Message}";
         }
     }
+    private void FilterSuggestions(ChangeEventArgs e)
+{
+    var input = e.Value?.ToString() ?? string.Empty;
+    FilteredRecipients = AllRelevantRecipients
+        .Where(email => email.Contains(input, StringComparison.OrdinalIgnoreCase))
+        .ToList();
+}
+
+private void SelectRecipient(string email)
+{
+    transferModel.ReceiverEmail = email;
+    FilteredRecipients.Clear();
+}
 
     public class TransferModel
     {
