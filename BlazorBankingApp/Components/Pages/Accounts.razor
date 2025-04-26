@@ -1,0 +1,18 @@
+@page "/accounts"
+@rendermode InteractiveServer
+@inject Services.SupabaseService SupabaseService
+@inject Services.UserService UserService
+@inject NavigationManager Navigation
+@inject DataService DataService
+@inject TransactionsService TransactionsService
+@using Supabase;
+@using Supabase.Postgrest.Models;
+@using static Supabase.Postgrest.Constants;
+@using Supabase.Postgrest.Extensions;
+@using BlazorBankingApp.Service;
+
+<h1>Testing Icons</h1>
+<p><i class="bi bi-house-door-fill"></i> House</p>
+<p><i class="bi bi-person-circle"></i> Family</p>
+<p><i class="bi bi-wallet2"></i> Wallet</p>
+<p><i class="bi bi-arrow-left-right"></i> Transfer</p>

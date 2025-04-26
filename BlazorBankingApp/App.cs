@@ -63,6 +63,7 @@ builder.Services.AddSingleton<UserService>();
 builder.Services.AddSingleton<DataService>();
 builder.Services.AddSingleton<TransactionsService>();
 
+
 // Register Blazor Components
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 

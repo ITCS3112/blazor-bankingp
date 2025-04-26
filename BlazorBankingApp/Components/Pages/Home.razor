@@ -22,9 +22,6 @@
         </p>
         <p class="balance-amount">@Balance.ToString("C2")</p>
     </div>
-    <div button-container>
-        <button id="transfer-button" class="transfer-button" @onclick="TestTransfer">Transfer</button>
-    </div>
     <div class="transaction-container">
         <h3 class="transaction-label">Transaction History</h3>
         @if (transactions == null || !transactions.Any())

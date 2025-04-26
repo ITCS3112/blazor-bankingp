@@ -88,6 +88,17 @@
 .navbar-toggler:checked ~ .nav-scrollable {
     display: block;
 }
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* wider gap if you want */
+}
+
+.nav-link i {
+    font-size: 1.25rem; /* Make the icon bigger for visual balance */
+    line-height: 1;      /* Fix vertical spacing */
+    vertical-align: middle; /* Align the icon properly with text */
+}
 
 @media (min-width: 641px) {
     .navbar-toggler {
