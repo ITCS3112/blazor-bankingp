@@ -1,1 +1,295 @@
+@inject NavigationManager Navigation
+@inject Services.SupabaseService SupabaseService
+@inject Services.UserService UserService
+@inject DataService DataService
+@inject TransactionsService TransactionsService
+@using Supabase;
+@using Supabase.Postgrest.Models;
+@using static Supabase.Postgrest.Constants;
+@using Supabase.Postgrest.Extensions;
+@using BlazorBankingApp.Service;
+@rendermode InteractiveServer
+
 @page "/manageUsers"
+
+<div class="user-container">
+    <h1>Manage Users</h1>
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+        <input type="text" placeholder="Search by email..." @bind-value="SearchTerm" @bind-value:event="oninput"
+            class="search-input" />
+        <button class="btn btn-primary search-button" @onclick="PerformSearch">Search</button>
+    </div>
+    <div class="add-user">
+        <p>Add User</p>
+        <input type="text" placeholder="First Name" id="FirstName" class="add-user-input" />
+        <input type="text" placeholder="Last Name" id="LastName" class="add-user-input" />
+        <input type="text" placeholder="Email" id="Email" class="add-user-input" />
+        <input type="text" placeholder="Password" id="Password" class="add-user-input" />
+        <input type="text" placeholder="Phone" id="Phone" class="add-user-input" />
+        <input type="text" placeholder="Authority Level" id="AuthorityLevel" class="add-user-input" />
+        <button class="btn btn-primary add-user-button" @onclick="AddUser">Add User</button>
+    </div>
+
+    <!--<div class="delete-user">
+        <p>Delete User</p>
+        <input type="text" placeholder="Email of User to Delete" id="DeleteEmail" class="delete-user-input" />
+        <button class="btn btn-danger delete-user-button" @onclick="DeleteUser">Delete User</button>
+    </div>-->
+
+    <div class="users-container">
+        <h3 class="user-label">User List</h3>
+        @if (FilteredUsers == null || !FilteredUsers.Any())
+        {
+            <p>No Users Found.</p>
+        }
+        else
+        {
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Authority Level</th>
+                        <th>Balance</th>
+                        <th>Phone</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in FilteredUsers)
+                    {
+                        <tr>
+                            <td>@user.Name</td>
+                            <td>@user.Email</td>
+                            <td>@user.AuthorityLevel</td>
+                            <td>@user.Balance.ToString("C2")</td>
+                            <td>@user.Phone</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    @if (IsLoading)
+    {
+        <p>Loading...</p>
+    }
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <p style="color: red;">@ErrorMessage</p>
+    }
+</div>
+    using BlazorBankingApp.Services;
+
+
+
+@code
+{
+    private List<BankUser> users { get; set; }
+    private List<BankUser> FilteredUsers { get; set; }
+    private string SearchTerm { get; set; } = string.Empty;
+    private bool IsLoading = false;
+    private string ErrorMessage = string.Empty;
+
+
+    private string displayName = string.Empty;
+    private string Email = string.Empty;
+    private string AuthorityLevel = string.Empty;
+    private string Phone = string.Empty;
+    private string Password = string.Empty;
+    private string FirstName = string.Empty;
+    private string LastName = string.Empty;
+
+    private string DeleteEmail = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var session = SupabaseService.GetClient().Auth.CurrentSession;
+        if (session == null)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        IsLoading = true;
+
+        try
+        {
+            users = await FetchUsers() ?? new List<BankUser>();
+            FilteredUsers = users; // Initialize the filtered list with all users
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task AddUser()
+    {
+        try
+        {
+            var session = SupabaseService.GetClient().Auth.CurrentSession;
+            if (session == null)
+            {
+                throw new InvalidOperationException("User session is not available. Please log in again. - UserManagement.razor.cs");
+            }
+
+            displayName = $"{FirstName} {LastName}";
+
+            var user = await SupabaseService.SignUpUser(Email, Password, displayName, Phone, AuthorityLevel);
+
+            if (user != null)
+            {
+                Console.WriteLine($"User created: {user.Email} - UserManagement.razor.cs");
+                await FetchUsers();
+            }
+            else
+            {
+                ErrorMessage = "Failed to create user. - UserManagement.razor.cs";
+                Console.WriteLine(ErrorMessage);
+            }
+
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    /*private async Task DeleteUser()
+    {
+    try
+    {
+        var session = SupabaseService.GetClient().Auth.CurrentSession;
+        if (session == null)
+        {
+            throw new InvalidOperationException("User session is not available. Please log in again. - UserManagement.razor.cs");
+        }
+
+        // Find the BankUser
+        var userResponse = await SupabaseService.GetClient()
+            .From<BankUser>()
+            .Filter("email", Operator.Equals, DeleteEmail)
+            .Single();
+
+        if (userResponse == null)
+        {
+            ErrorMessage = $"No user found with email {DeleteEmail}. - UserManagement.razor.cs";
+            Console.WriteLine(ErrorMessage);
+            return;
+        }
+
+        // First, delete from your BankUser table
+        var deleteBankUserResponse = await SupabaseService.GetClient()
+            .From<BankUser>()
+            .Delete(userResponse);
+
+        if (deleteBankUserResponse.Models.Count == 0)
+        {
+            ErrorMessage = $"Failed to delete BankUser with email {DeleteEmail}. - UserManagement.razor.cs";
+            Console.WriteLine(ErrorMessage);
+            return;
+        }
+
+        // Then, delete from auth.users
+        var deleteAuthUserResponse = await SupabaseService.GetClient().Auth
+            .From<"users">() // Create an AuthUser model (I'll show you below)
+            .Filter("id", Operator.Equals, userResponse.Id.ToString())
+            .Delete();
+
+        Console.WriteLine($"User with email {DeleteEmail} deleted successfully from both BankUser and auth.users. - UserManagement.razor.cs");
+
+        await RefreshUsers(); // Refresh the user list
+    }
+    catch (Exception ex)
+    {
+        ErrorMessage = $"Error deleting user: {ex.Message} - UserManagement.razor.cs";
+        Console.WriteLine(ErrorMessage);
+    }
+    }*/
+
+
+
+    public async Task<List<BankUser>> FetchUsers()
+    {
+        try
+        {
+            var session = SupabaseService.GetClient().Auth.CurrentSession;
+            if (session == null)
+            {
+                throw new InvalidOperationException("User session is not available. Please log in again. - UserManagement.razor.cs");
+            }
+
+            var users = await SupabaseService.GetClient()
+            .From<BankUser>()
+            .Select("*")
+            .Get();
+
+            if (users == null || !users.Models.Any())
+            {
+                Console.WriteLine("No users found in the database. - UserManagement.razor.cs");
+                return new List<BankUser>();
+            }
+            else
+            {
+                Console.WriteLine($"Loaded {users.Models.Count} users. - UserManagement.razor.cs");
+            }
+            return users.Models;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching users: {ex.Message} - UserManagement.razor.cs");
+            throw;
+        }
+    }
+
+    public async Task PerformSearch()
+    {
+        Console.WriteLine($"PerformSearch called with SearchTerm: {SearchTerm} - UserManagement.razor.cs");
+
+        if (users == null)
+        {
+            FilteredUsers = new List<BankUser>();
+            ErrorMessage = "No users available to search. - UserManagement.razor.cs";
+            Console.WriteLine(ErrorMessage);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            // If the search term is empty, show all users
+            FilteredUsers = users;
+            ErrorMessage = string.Empty;
+            Console.WriteLine("Search term is empty. Showing all users.- UserManagement.razor.cs");
+        }
+        else
+        {
+            // Filter users based on the search term
+            FilteredUsers = users
+            .Where(user => user.Email.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+            if (FilteredUsers.Count == 0)
+            {
+                Console.WriteLine($"Filtered users count: {FilteredUsers.Count} - UserManagement.razor.cs");
+                ErrorMessage = "No users found matching the search term.";
+                Console.WriteLine(ErrorMessage);
+            }
+            else
+            {
+                ErrorMessage = string.Empty;
+                Console.WriteLine($"Found {FilteredUsers.Count} users matching the search term. - UserManagement.razor.cs");
+            }
+        }
+        StateHasChanged();
+        Console.WriteLine($"PerformSearch called with SearchTerm: {SearchTerm} - UserManagement.razor.cs");
+    }
+
+
+}

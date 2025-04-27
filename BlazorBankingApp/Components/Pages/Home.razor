@@ -32,26 +32,29 @@
         {
             <ul class="transaction-list">
                 @foreach (var transaction in transactions)
-            {
-                <li class="transaction-item">
-                    <div class="transaction-header">
-                        <span class="transaction-date">@transaction.Timestamp.ToString("MMM dd, yyyy HH:mm")</span>
-                        <span class="transaction-amount @GetAmountClas(transaction)">
-                            @FormatAmount(transaction)
-                        </span>
-                    </div>
-                    <div class="transaction-details">
-                        @if (IsCurrentUser(transaction.SenderId))
-                        {
-                            <p class="transaction-sent">You sent <span class="amount">@transaction.Amount.ToString("C2")</span> to <span class="user-name">@transaction.ReceiverName</span></p>
-                        }
-                        else
-                        {
-                            <p class="transaction-received">You received <span class="amount">@transaction.Amount.ToString("C2")</span> from <span class="user-name">@transaction.SenderName</span></p>
-                        }
-                    </div>
-                </li>
-            }
+                {
+                    <li class="transaction-item">
+                        <div class="transaction-header">
+                            <span class="transaction-date">@transaction.Timestamp.ToString("MMM dd, yyyy HH:mm")</span>
+                            <span class="transaction-amount @GetAmountClas(transaction)">
+                                @FormatAmount(transaction)
+                            </span>
+                        </div>
+                        <div class="transaction-details">
+                            @if (IsCurrentUser(transaction.SenderId))
+                            {
+                                <p class="transaction-sent">You sent <span class="amount">@transaction.Amount.ToString("C2")</span>
+                                    to <span class="user-name">@transaction.ReceiverName</span></p>
+                            }
+                            else
+                            {
+                                <p class="transaction-received">You received <span
+                                        class="amount">@transaction.Amount.ToString("C2")</span> from <span
+                                        class="user-name">@transaction.SenderName</span></p>
+                            }
+                        </div>
+                    </li>
+                }
             </ul>
         }
     </div>
@@ -188,41 +191,41 @@
         return id.ToString().Substring(0, 8) + "...";
     }
     private string ConvertToEST(DateTime utcTime)
-{
-    try
     {
-        var estTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-        var estTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, estTimeZone);
-        return estTime.ToString("MMM dd, yyyy HH:mm"); // Format as desired
+        try
+        {
+            var estTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+            var estTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, estTimeZone);
+            return estTime.ToString("MMM dd, yyyy HH:mm"); // Format as desired
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            Console.WriteLine("Eastern Standard Time zone not found.");
+            return utcTime.ToString("MMM dd, yyyy HH:mm"); // Fallback to UTC
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error converting time to EST: {ex.Message}");
+            return utcTime.ToString("MMM dd, yyyy HH:mm"); // Fallback to UTC
+        }
     }
-    catch (TimeZoneNotFoundException)
+    private bool IsCurrentUser(Guid userId)
     {
-        Console.WriteLine("Eastern Standard Time zone not found.");
-        return utcTime.ToString("MMM dd, yyyy HH:mm"); // Fallback to UTC
+        var currentUserId = SupabaseService.GetClient().Auth.CurrentSession?.User?.Id;
+        return userId.ToString() == currentUserId;
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error converting time to EST: {ex.Message}");
-        return utcTime.ToString("MMM dd, yyyy HH:mm"); // Fallback to UTC
-    }
-}
-private bool IsCurrentUser(Guid userId)
-{
-    var currentUserId = SupabaseService.GetClient().Auth.CurrentSession?.User?.Id;
-    return userId.ToString() == currentUserId;
-}
 
-private string GetAmountClas(Transaction transaction)
-{
-    return IsCurrentUser(transaction.SenderId) ? "sent-amount" : "received-amount";
-}
+    private string GetAmountClas(Transaction transaction)
+    {
+        return IsCurrentUser(transaction.SenderId) ? "sent-amount" : "received-amount";
+    }
 
-private string FormatAmount(Transaction transaction)
-{
-    return IsCurrentUser(transaction.SenderId) 
-        ? $"-${transaction.Amount:F2}" 
+    private string FormatAmount(Transaction transaction)
+    {
+        return IsCurrentUser(transaction.SenderId)
+        ? $"-${transaction.Amount:F2}"
         : $"+${transaction.Amount:F2}";
-}
+    }
 
 
 }

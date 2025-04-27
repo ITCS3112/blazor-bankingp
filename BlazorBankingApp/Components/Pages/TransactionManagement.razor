@@ -1,2 +1,196 @@
 @page "/manageTransactions"
 @inject NavigationManager Navigation
+@inject Services.SupabaseService SupabaseService
+@inject Services.UserService UserService
+@inject TransactionsService TransactionsService
+@using Supabase
+@using Supabase.Postgrest.Models
+@using static Supabase.Postgrest.Constants
+@using Supabase.Postgrest.Extensions
+@using BlazorBankingApp.Service
+@rendermode InteractiveServer
+
+<PageTitle>Manage Transactions</PageTitle>
+
+<div class="transaction-page">
+    <div class="search-bar">
+        <input type="text" placeholder="Search Transactions by name or ID..." 
+               @bind-value="SearchTerm" 
+               @bind-value:event="oninput"
+               class="search-input" />
+        <button class="btn btn-primary search-button" @onclick="PerformSearch">Search</button>
+    </div>
+
+    <div class="transaction-table">
+        <h3 class="transaction-label">Transaction List</h3>
+        
+        @if (FilteredTransactions == null || !FilteredTransactions.Any())
+        {
+            <p>No transactions found.</p>
+        }
+        else
+        {
+            <table class="transaction-table">
+                <thead>
+                    <tr>
+                        <th>Sender ID</th>
+                        <th>Receiver ID</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var transaction in FilteredTransactions)
+                    {
+                        <tr class="@GetTransactionClass(transaction)">
+                            <td>@ShortenId(transaction.SenderId)</td>
+                            <td>@ShortenId(transaction.ReceiverId)</td>
+                            <td>@FormatTransactionAmount(transaction)</td>
+                            <td>@ConvertToEST(transaction.Timestamp)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    @if (IsLoading)
+    {
+        <p>Loading...</p>
+    }
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <p style="color: red;">@ErrorMessage</p>
+    }
+</div>
+
+@code {
+    private string ID => SupabaseService.GetClient().Auth.CurrentSession?.User?.Id?.ToString() ?? string.Empty;
+    List<Transaction> transactions { get; set; } = new();
+    List<Transaction> FilteredTransactions { get; set; } = new();
+    string SearchTerm { get; set; } = string.Empty;
+    bool IsLoading { get; set; }
+    string ErrorMessage { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var session = SupabaseService.GetClient().Auth.CurrentSession;
+        if (session == null)
+        {
+            ErrorMessage = "Please log in to view transactions.";
+            return;
+        }
+        
+        await FetchTransactions();
+    }
+
+    private async Task FetchTransactions()
+    {
+        try
+        {
+            var session = SupabaseService.GetClient().Auth.CurrentSession;
+            if (session == null)
+            {
+                ErrorMessage = "User session is not available. Please log in again.";
+                return;
+            }
+
+            var response = await SupabaseService.GetClient()
+                .From<Transaction>()
+                .Select("*") // No filters, no joins
+                .Get();
+            
+            transactions = response.Models.ToList();
+            if (transactions == null || !transactions.Any())
+            {
+                ErrorMessage = "No transactions found.";
+                return;
+            }
+
+            
+            FilteredTransactions = transactions
+                .Where(t => t.SenderId.ToString() == ID || t.ReceiverId.ToString() == ID)
+                .ToList();
+                
+
+            FilteredTransactions = transactions;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error fetching transactions: {ex.Message}";
+        }
+    }
+
+    public async Task PerformSearch()
+    {
+        if (transactions == null)
+        {
+            FilteredTransactions = new List<Transaction>();
+            ErrorMessage = "No transactions available to search.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            // No search term — show all transactions
+            FilteredTransactions = transactions;
+            ErrorMessage = string.Empty;
+        }
+        else
+        {
+            // Search by SenderId or ReceiverId
+            FilteredTransactions = transactions
+                .Where(t => t.SenderId.ToString().Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                            t.ReceiverId.ToString().Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (!FilteredTransactions.Any())
+            {
+                ErrorMessage = "No transactions found matching the search term.";
+            }
+            else
+            {
+                ErrorMessage = string.Empty;
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    private bool IsUserSender(Transaction transaction)
+    {
+        var userId = SupabaseService.GetClient().Auth.CurrentSession?.User?.Id;
+        return transaction.SenderId.ToString() == userId;
+    }
+
+    private string GetTransactionClass(Transaction transaction)
+    {
+        return IsUserSender(transaction) ? "outgoing-transaction" : "incoming-transaction";
+    }
+
+    private string FormatTransactionAmount(Transaction transaction)
+    {
+        return IsUserSender(transaction)
+            ? $"-${transaction.Amount:F2}"
+            : $"+${transaction.Amount:F2}";
+    }
+
+    private string ConvertToEST(DateTime utcTime)
+    {
+        try
+        {
+            var estTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+            var estTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, estTimeZone);
+            return estTime.ToString("MMM dd, yyyy HH:mm");
+        }
+        catch
+        {
+            return utcTime.ToString("MMM dd, yyyy HH:mm");
+        }
+    }
+
+    private string ShortenId(Guid id)
+    {
+        return id.ToString().Substring(0, 8) + "..."; // Just show first 8 characters
+    }
+}
