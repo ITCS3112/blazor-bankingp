@@ -1,3 +1,8 @@
+/*
+    This File is what builds our website and runs the client/database.
+    It adds our .env variables, and sets up the services we need to run the app and transport data.
+*/
+
 using BlazorBankingApp.Components;
 using BlazorBankingApp.Service;
 using BlazorBankingApp.Services;  // Import services
