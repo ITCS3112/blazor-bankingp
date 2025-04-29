@@ -287,7 +287,9 @@ public class SupabaseService : IDisposable
                 {
                     Console.WriteLine("Login failed after signup.");
                     return null;
-                } else {
+                }
+                else
+                {
                     // Set the session manually
                     Console.WriteLine("Login successful after signup.");
                 }
@@ -348,6 +350,7 @@ public class SupabaseService : IDisposable
                         .Insert(newUser);
 
                     Console.WriteLine("BankUser inserted successfully into the database - SignUpUser.Services.cs");
+
                 }
             }
             catch (Exception ex)
