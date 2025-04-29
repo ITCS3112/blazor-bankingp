@@ -279,6 +279,20 @@ public class SupabaseService : IDisposable
                 return null;
             }
 
+            if (authResponse.User != null)
+            {
+                // No session means we should log in manually
+                var loginResponse = await _supabaseClient.Auth.SignIn(email.Trim(), password);
+                if (loginResponse.User == null)
+                {
+                    Console.WriteLine("Login failed after signup.");
+                    return null;
+                } else {
+                    // Set the session manually
+                    Console.WriteLine("Login successful after signup.");
+                }
+            }
+
             // Save session immediately
             await SaveSession();
 
@@ -366,6 +380,10 @@ public class SupabaseService : IDisposable
             await File.WriteAllTextAsync("session.json", sessionJson);
             Console.WriteLine("Session saved. - SaveSession.Services.cs");
         }
+        else
+        {
+            Console.WriteLine("No session to save. - SaveSession.Services.cs");
+        }
     }
 
     /// <summary>
@@ -376,7 +394,7 @@ public class SupabaseService : IDisposable
     public async Task RestoreSession()
     {
         try
-        {   
+        {
             // Check if the session file exists
             if (File.Exists("session.json"))
             {
