@@ -126,10 +126,26 @@
 
         try
         {
+            var session = SupabaseService.GetClient().Auth.CurrentSession;
+            Console.WriteLine($"Current user ID: {session?.User?.Id}");
+            Console.WriteLine($"CurrentAccountId from UserService: {UserService.CurrentAccountId}");
+            Console.WriteLine($"");
             var senderAccountId = UserService.CurrentAccountId.Value;
+            var currentEmail = SupabaseService.GetClient().Auth.CurrentSession?.User?.Email;
+            Console.WriteLine($"Sender Account ID: {senderAccountId}, Sender Email: {currentEmail}");
+            
 
             // Look up recipient BankUser by email
             var receiverUser = await SupabaseService.FindUserByEmailAsync(transferModel.ReceiverEmail);
+            Console.WriteLine($"Receiver User: {receiverUser?.Email}, Receiver User ID: {receiverUser?.Id}");
+            Console.WriteLine($"Transfer Model Receiver Email: {transferModel.ReceiverEmail}");
+
+            if (transferModel.ReceiverEmail.Trim().ToLower() == currentEmail?.Trim().ToLower())
+            {
+                statusMessage = "Cannot transfer to yourself.";
+                Console.WriteLine(statusMessage);
+                return;
+            }
             if (receiverUser == null)
             {
                 statusMessage = "Recipient not found.";
@@ -151,7 +167,16 @@
                 return;
             }
 
+            if (receiverAccount.Id == senderAccountId)
+            {
+                statusMessage = "Cannot transfer to your own account.";
+                Console.WriteLine(statusMessage);
+                return;
+            }
+
             // Call the account-level transaction method
+            Console.WriteLine($"Attempting to send ${transferModel.Amount} from {senderAccountId} to {receiverAccount.Id}");
+
             var result = await TransactionsService.SendTransactionAsync(
             senderAccountId,
             receiverAccount.Id,

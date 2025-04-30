@@ -50,7 +50,7 @@
                             </span>
                         </div>
                         <div class="transaction-details">
-                            @if (IsCurrentUser(transaction.SenderId))
+                            @if (IsCurrentAccount(transaction.SenderId))
                             {
                                 <p class="transaction-sent">You sent <span class="amount">@transaction.Amount.ToString("C2")</span>
                                     to <span class="user-name">@transaction.ReceiverName</span></p>
@@ -103,7 +103,10 @@
             return;
         }
 
-        await UserService.InitializeDefaultAccount();
+        await Task.Delay(250); // Simulate loading delay
+        await UserService.InitializeDefaultAccount(forceReload: true);
+
+
         var selectedAccount = UserService.CurrentAccountId;
 
 
@@ -117,7 +120,8 @@
 
         try
         {
-            Balance = await DataService.FetchBalanceForAccount(selectedAccount.Value);
+            Balance = await DataService.FetchBalanceForAccount(UserService.CurrentAccountId.Value);
+
             Accounts = await DataService.GetUserAccounts();
 
             CurrentAccount = Accounts.FirstOrDefault(a => a.Id == selectedAccount.Value);
@@ -262,20 +266,19 @@
             return utcTime.ToString("MMM dd, yyyy HH:mm"); // Fallback to UTC
         }
     }
-    private bool IsCurrentUser(Guid userId)
-    {
-        var currentUserId = SupabaseService.GetClient().Auth.CurrentSession?.User?.Id;
-        return userId.ToString() == currentUserId;
-    }
+    private bool IsCurrentAccount(Guid accountId)
+{
+    return UserService.CurrentAccountId.HasValue && UserService.CurrentAccountId.Value == accountId;
+}
 
     private string GetAmountClas(Transaction transaction)
     {
-        return IsCurrentUser(transaction.SenderId) ? "sent-amount" : "received-amount";
+        return IsCurrentAccount(transaction.SenderId) ? "sent-amount" : "received-amount";
     }
 
     private string FormatAmount(Transaction transaction)
     {
-        return IsCurrentUser(transaction.SenderId)
+        return IsCurrentAccount(transaction.SenderId)
         ? $"-${transaction.Amount:F2}"
         : $"+${transaction.Amount:F2}";
     }

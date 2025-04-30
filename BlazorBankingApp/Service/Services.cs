@@ -187,27 +187,65 @@ public class UserService
         CurrentAccountId = accountId;
     }
 
-    public async Task InitializeDefaultAccount()
+public async Task InitializeDefaultAccount(bool forceReload = false)
+{
+    if (!forceReload && CurrentAccount != null)
+        return;
+
+    if (CurrentAccountId == null)
     {
-        if (CurrentAccountId != null) return;
-
-        // Ensure session is loaded
-        if (_supabaseClient.Auth.CurrentSession == null)
+        // Fetch user's default checking account
+        var session = _supabaseClient.Auth.CurrentSession;
+        if (session == null)
         {
-            Console.WriteLine("No session detected. Attempting to restore session...");
-            await _supabaseService.RestoreSession();
-        }
-
-        var session = _supabaseService.GetClient().Auth.CurrentSession;
-        if (session?.User?.Id == null)
-        {
-            Console.WriteLine("No session or user ID found. Cannot initialize default account.");
+            Console.WriteLine("No session found in InitializeDefaultAccount.");
             return;
         }
 
+        var userId = Guid.Parse(session.User.Id);
+        var accountsResp = await _supabaseClient
+            .From<Account>()
+            .Filter("user_id", Supabase.Postgrest.Constants.Operator.Equals, userId.ToString())
+            .Get();
+
+        var defaultAccount = accountsResp.Models.FirstOrDefault(a => a.Type == "checking");
+        if (defaultAccount != null)
+        {
+            CurrentAccount = defaultAccount;
+            CurrentAccountId = defaultAccount.Id;
+        }
+    }
+    else
+    {
+        // Re-fetch the selected account
+        var accountResp = await _supabaseClient
+            .From<Account>()
+            .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, CurrentAccountId.ToString())
+            .Single();
+
+        if (accountResp != null)
+        {
+            CurrentAccount = accountResp;
+        }
+    }
+}
+
+// Separated account loading into its own method for clarity
+private async Task LoadDefaultAccountForCurrentUser()
+{
+    if (CurrentUser == null)
+    {
+        Console.WriteLine("Cannot load account: CurrentUser is null");
+        CurrentAccount = null;
+        CurrentAccountId = null;
+        return;
+    }
+
+    try
+    {
         var accountResponse = await _supabaseClient
-            .From<Account>() // Make sure you have an Account model
-            .Filter("user_id", Supabase.Postgrest.Constants.Operator.Equals, session.User.Id)
+            .From<Account>()
+            .Filter("user_id", Supabase.Postgrest.Constants.Operator.Equals, CurrentUser.Id)
             .Get();
 
         var defaultAccount = accountResponse.Models
@@ -216,14 +254,39 @@ public class UserService
         if (defaultAccount != null)
         {
             CurrentAccountId = defaultAccount.Id;
+            CurrentAccount = defaultAccount;
             Console.WriteLine($"Default account set: {defaultAccount.Name} ({defaultAccount.Id})");
         }
         else
         {
             Console.WriteLine("No account found for user.");
+            CurrentAccount = null;
+            CurrentAccountId = null;
         }
-        CurrentAccount = defaultAccount;
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error loading account data: {ex.Message}");
+        CurrentAccount = null;
+        CurrentAccountId = null;
+    }
+}
+
+
+    public void ClearSession()
+{
+    id = null;
+    email = null;
+    authoritylevel = null;
+    name = null;
+    phone = null;
+    balance = 0;
+    CurrentUser = null;
+    CurrentAccountId = null;
+    CurrentAccount = null;
+
+    Console.WriteLine("UserService session cleared.");
+}
 
 
 }

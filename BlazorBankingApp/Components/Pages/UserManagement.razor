@@ -23,13 +23,23 @@
     </div>
     <div class="add-user">
         <p>Add User</p>
-        <input type="text" placeholder="First Name" id="FirstName" class="add-user-input" />
-        <input type="text" placeholder="Last Name" id="LastName" class="add-user-input" />
-        <input type="text" placeholder="Email" id="Email" class="add-user-input" />
-        <input type="text" placeholder="Password" id="Password" class="add-user-input" />
-        <input type="text" placeholder="Phone" id="Phone" class="add-user-input" />
-        <input type="text" placeholder="Authority Level" id="AuthorityLevel" class="add-user-input" />
+        <input type="text" placeholder="First Name" @bind="FirstName" class="add-user-input" />
+        <input type="text" placeholder="Last Name" @bind="LastName" class="add-user-input" />
+        <input type="text" placeholder="Email" @bind="Email" class="add-user-input" />
+        <input type="text" placeholder="Password" @bind="Password" class="add-user-input" />
+        <input type="text" placeholder="Phone" @bind="Phone" class="add-user-input" />
+        <input type="text" placeholder="Authority Level" @bind="AuthorityLevel" class="add-user-input" />
+
         <button class="btn btn-primary add-user-button" @onclick="AddUser">Add User</button>
+
+        @if (!string.IsNullOrEmpty(success))
+        {
+            <p style="color: green; font-weight: bold;">@success</p>
+        }
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <p style="color: red; font-weight: bold;">@ErrorMessage</p>
+        }
     </div>
 
     <!--<div class="delete-user">
@@ -52,7 +62,6 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th>Authority Level</th>
-                        <th>Balance</th>
                         <th>Phone</th>
                     </tr>
                 </thead>
@@ -63,7 +72,6 @@
                             <td>@user.Name</td>
                             <td>@user.Email</td>
                             <td>@user.AuthorityLevel</td>
-                            <td>@user.Balance.ToString("C2")</td>
                             <td>@user.Phone</td>
                         </tr>
                     }
@@ -81,7 +89,7 @@
         <p style="color: red;">@ErrorMessage</p>
     }
 </div>
-    using BlazorBankingApp.Services;
+
 
 
 
@@ -92,7 +100,7 @@
     private string SearchTerm { get; set; } = string.Empty;
     private bool IsLoading = false;
     private string ErrorMessage = string.Empty;
-
+    private string success = string.Empty;
 
     private string displayName = string.Empty;
     private string Email = string.Empty;
@@ -142,11 +150,14 @@
 
             displayName = $"{FirstName} {LastName}";
 
+            Console.WriteLine($"Attempting to create user with email: {Email} Password {Password} {displayName} {Phone} {AuthorityLevel}- UserManagement.razor.cs");
+
             var user = await SupabaseService.SignUpUser(Email, Password, displayName, Phone, AuthorityLevel);
 
             if (user != null)
             {
                 Console.WriteLine($"User created: {user.Email} - UserManagement.razor.cs");
+                success = "User was created successfully";
                 await FetchUsers();
             }
             else

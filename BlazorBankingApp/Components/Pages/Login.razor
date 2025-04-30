@@ -22,7 +22,8 @@
 
         <div class="mb-3">
             <label for="password" class="form-label">Password</label>
-            <input @bind="password" id="password" type="password" class="form-control" placeholder="Enter your password" />
+            <input @bind="password" id="password" type="password" class="form-control"
+                placeholder="Enter your password" />
         </div>
 
         <button @onclick="login" class="btn btn-primary w-100">Login</button>
@@ -33,7 +34,8 @@
         }
 
         <div class="mt-3 text-center">
-            <button style="color: white;" @onclick="@(() => NavigationManager.NavigateTo("/signup/"))" class="create-account btn w-33">Create Account</button>
+            <button style="color: white;" @onclick="@(() => NavigationManager.NavigateTo("/signup/"))"
+                class="create-account btn w-33">Create Account</button>
         </div>
 
         <div class="mt-3 text-center">
@@ -82,13 +84,22 @@
 
             if (response?.User != null)
             {
+                await Task.Delay(250); // Give time for session propagation
+
+                // ✅ Clear out any stale user/account state
+                UserService.CurrentAccountId = null;
+                UserService.CurrentAccount = null;
+                UserService.CurrentUser = null;
+
+                // ✅ Load fresh state for the logged-in user
+                await UserService.InitializeDefaultAccount(forceReload: true);
                 loginMessage = "Login successful!";
                 Console.WriteLine("User logged in: " + response.User.Email);
 
                 // Store user info in UserService for access across pages
                 UserService.id = response.User.Id;
                 UserService.email = response.User.Email;
-                UserService.authoritylevel = response.User.Role ?? "user";  // Assuming "user" as default role
+                UserService.authoritylevel = response.User.Role ?? "user"; // Assuming "user" as default role
                 await SupabaseService.SaveSession();
 
                 NavigationManager.NavigateTo("/home");
