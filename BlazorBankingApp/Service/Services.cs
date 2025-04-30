@@ -42,6 +42,7 @@ public class UserService
     public string? name { get; set; }
     public string? phone { get; set; }
     public float balance { get; set; }
+    public Guid? CurrentAccountId { get; set; }
 
     /// <summary>
     /// Initializes the UserService instance with the given Supabase client.
@@ -50,6 +51,7 @@ public class UserService
     public UserService(Supabase.Client supabaseClient)
     {
         _supabaseClient = supabaseClient;
+        _supabaseService = new SupabaseService();
     }
 
 
@@ -178,6 +180,50 @@ public class UserService
             Console.WriteLine("Failed to load user balance. - SetBalance.Services.cs");
         }
     }
+
+    public void SetCurrentAccount(Guid accountId)
+    {
+        CurrentAccountId = accountId;
+    }
+
+    public async Task InitializeDefaultAccount()
+    {
+        if (CurrentAccountId != null) return;
+
+        // Ensure session is loaded
+        if (_supabaseClient.Auth.CurrentSession == null)
+        {
+            Console.WriteLine("No session detected. Attempting to restore session...");
+            await _supabaseService.RestoreSession();
+        }
+
+        var session = _supabaseService.GetClient().Auth.CurrentSession;
+        if (session?.User?.Id == null)
+        {
+            Console.WriteLine("No session or user ID found. Cannot initialize default account.");
+            return;
+        }
+
+        var accountResponse = await _supabaseClient
+            .From<Account>() // Make sure you have an Account model
+            .Filter("user_id", Supabase.Postgrest.Constants.Operator.Equals, session.User.Id)
+            .Get();
+
+        var defaultAccount = accountResponse.Models
+            .FirstOrDefault(a => a.Type.ToLower() == "checking") ?? accountResponse.Models.FirstOrDefault();
+
+        if (defaultAccount != null)
+        {
+            CurrentAccountId = defaultAccount.Id;
+            Console.WriteLine($"Default account set: {defaultAccount.Name} ({defaultAccount.Id})");
+        }
+        else
+        {
+            Console.WriteLine("No account found for user.");
+        }
+    }
+
+
 }
 
 /// <summary>
@@ -322,7 +368,6 @@ public class SupabaseService : IDisposable
                     existingUser.Name = displayName;
                     existingUser.Phone = phone;
                     existingUser.AuthorityLevel = authorityLevel;
-                    existingUser.Balance = 20000;
                     existingUser.Email = userEmail; // <-- use userEmail now
 
                     await _supabaseClient
@@ -340,7 +385,6 @@ public class SupabaseService : IDisposable
                         Name = displayName,
                         Phone = phone,
                         AuthorityLevel = authorityLevel,
-                        Balance = 20000, // <-- default balance
                         Email = userEmail // <-- use userEmail now
                     };
 
@@ -441,6 +485,8 @@ public class SupabaseService : IDisposable
 
         return user;
     }
+
+
 
 
     /// <summary>

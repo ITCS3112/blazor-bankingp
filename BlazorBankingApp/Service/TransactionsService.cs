@@ -10,159 +10,154 @@ public class TransactionsService
     }
 
 
-    public async Task<string> SendTransactionAsync(Guid senderId, Guid receiverId, decimal amount)
-    {
-        if (amount <= 0)
-            return "Amount must be greater than zero.";
+    public async Task<string> SendTransactionAsync(Guid senderAccountId, Guid receiverAccountId, decimal amount, bool isInternal = false)
+{
+    if (amount <= 0)
+        return "Amount must be greater than zero.";
 
+    if (senderAccountId == receiverAccountId)
+        return "Cannot send money to the same account.";
 
-        if (senderId == receiverId)
-            return "Cannot send money to yourself.";
-
-
-        // 1. Get both users
-        var senderResp = await _supabase
-        .From<BankUser>()
-        .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, senderId.ToString())
+    // 1. Get both accounts
+    var senderResp = await _supabase
+        .From<Account>()
+        .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, senderAccountId.ToString())
         .Get();
 
+    var receiverResp = await _supabase
+        .From<Account>()
+        .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, receiverAccountId.ToString())
+        .Get();
 
-        var receiverResp = await _supabase
-            .From<BankUser>()
-            .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, receiverId.ToString())
+    var sender = senderResp.Models.FirstOrDefault();
+    var receiver = receiverResp.Models.FirstOrDefault();
+
+    if (sender == null || receiver == null)
+        return "Sender or receiver account not found.";
+
+    // 2. Check balance
+    if (sender.Balance < amount)
+        return "Insufficient funds.";
+
+    // 3. Update balances
+    sender.Balance -= amount;
+    receiver.Balance += amount;
+
+    try
+    {
+        // Save updated balances
+        await _supabase.From<Account>().Update(sender);
+        await _supabase.From<Account>().Update(receiver);
+
+        // 4. Log transaction (using stored procedure or direct insert)
+        var transactionId = Guid.NewGuid();
+        var logTime = DateTime.UtcNow;
+        await _supabase.Rpc("log_transaction", new
+        {
+            transaction_id = transactionId,
+            sender_id = senderAccountId,
+            receiver_id = receiverAccountId,
+            amount = amount,
+            log_time = logTime,
+            is_internal = isInternal
+        });
+
+        return $"Transaction successful!";
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error during transaction: {ex.Message}");
+        return "Transaction failed.";
+    }
+}
+
+
+    public async Task<List<Transaction>> GetTransactionsAsync(Guid accountId)
+{
+    try
+    {
+        // 1. Get transactions where this account is the sender
+        var senderTransactions = await _supabase
+            .From<Transaction>()
+            .Filter("sender_id", Supabase.Postgrest.Constants.Operator.Equals, accountId.ToString())
             .Get();
 
+        // 2. Get transactions where this account is the receiver
+        var receiverTransactions = await _supabase
+            .From<Transaction>()
+            .Filter("receiver_id", Supabase.Postgrest.Constants.Operator.Equals, accountId.ToString())
+            .Get();
 
-        var sender = senderResp.Models.FirstOrDefault();
-        var receiver = receiverResp.Models.FirstOrDefault();
+        // 3. Combine and order
+        var combined = new List<Transaction>();
+        combined.AddRange(senderTransactions.Models);
+        combined.AddRange(receiverTransactions.Models);
 
+        var orderedTransactions = combined
+            .OrderByDescending(t => t.Timestamp)
+            .ToList();
 
-        if (sender == null || receiver == null)
-            return "Sender or receiver not found.";
-
-
-        // 2. Check balance
-        if (sender.Balance < amount)
-            return "Insufficient funds.";
-
-
-        // 3. Update balances
-        sender.Balance -= amount;
-        receiver.Balance += amount;
-
-
-        try
+        // 4. Collect all sender/receiver account IDs
+        var accountIds = new HashSet<Guid>();
+        foreach (var transaction in orderedTransactions)
         {
-            await _supabase.From<BankUser>().Update(sender);
-            await _supabase.From<BankUser>().Update(receiver);
-
-
-            var transactionId = Guid.NewGuid();
-            var logTime = DateTime.UtcNow;
-
-
-            await _supabase.Rpc("log_transaction", new
-            {
-                transaction_id = transactionId,
-                sender_id = senderId,
-                receiver_id = receiverId,
-                amount = amount,
-                log_time = logTime
-
-
-            });
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error during transaction: {ex.Message}");
+            accountIds.Add(transaction.SenderId);
+            accountIds.Add(transaction.ReceiverId);
         }
 
-
-        return "Transaction successful!";
-    }
-
-
-    public async Task<List<Transaction>> GetTransactionsAsync(Guid userId)
-    {
-        try
+        // 5. Get associated BankUser names for each account
+        var userNames = new Dictionary<Guid, string>();
+        foreach (var id in accountIds)
         {
-            // Get transactions where user is the sender
-            var senderTransactions = await _supabase
-                .From<Transaction>()
-                .Filter("sender_id", Supabase.Postgrest.Constants.Operator.Equals, userId.ToString())
-                .Get();
-
-            // Get transactions where user is the receiver
-            var receiverTransactions = await _supabase
-                .From<Transaction>()
-                .Filter("receiver_id", Supabase.Postgrest.Constants.Operator.Equals, userId.ToString())
-                .Get();
-
-            // Combine the results
-            var combined = new List<Transaction>();
-            combined.AddRange(senderTransactions.Models);
-            combined.AddRange(receiverTransactions.Models);
-
-            // Sort by timestamp (most recent first)
-            var orderedTransactions = combined.OrderByDescending(t => t.Timestamp).ToList();
-
-            // Collect all unique user IDs that we need to look up
-            var userIds = new HashSet<Guid>();
-            foreach (var transaction in orderedTransactions)
+            try
             {
-                userIds.Add(transaction.SenderId);
-                userIds.Add(transaction.ReceiverId);
-            }
+                var accountResp = await _supabase
+                    .From<Account>()
+                    .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id.ToString())
+                    .Get();
 
-            // Create a dictionary to store user names
-            var userNames = new Dictionary<Guid, string>();
-
-            // Fetch user names for each unique ID
-            foreach (var id in userIds)
-            {
-                try
+                var account = accountResp.Models.FirstOrDefault();
+                if (account != null)
                 {
-                    var userResponse = await _supabase
+                    // Now get the user associated with this account
+                    var userResp = await _supabase
                         .From<BankUser>()
-                        .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, id.ToString())
+                        .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, account.UserId.ToString())
                         .Get();
 
-                    var user = userResponse.Models.FirstOrDefault();
+                    var user = userResp.Models.FirstOrDefault();
                     if (user != null && !string.IsNullOrEmpty(user.Name))
-                    {
                         userNames[id] = user.Name;
-                    }
                     else
-                    {
                         userNames[id] = $"User {id.ToString().Substring(0, 8)}";
-                    }
-                }
-                catch
-                {
-                    userNames[id] = $"User {id.ToString().Substring(0, 8)}";
                 }
             }
-
-            // Add name properties to each transaction
-            foreach (var transaction in orderedTransactions)
+            catch
             {
-                transaction.SenderName = userNames.ContainsKey(transaction.SenderId)
-                    ? userNames[transaction.SenderId]
-                    : $"User {transaction.SenderId.ToString().Substring(0, 8)}";
-
-                transaction.ReceiverName = userNames.ContainsKey(transaction.ReceiverId)
-                    ? userNames[transaction.ReceiverId]
-                    : $"User {transaction.ReceiverId.ToString().Substring(0, 8)}";
+                userNames[id] = $"User {id.ToString().Substring(0, 8)}";
             }
+        }
 
-            return orderedTransactions;
-        }
-        catch (Exception ex)
+        // 6. Attach user-friendly names
+        foreach (var transaction in orderedTransactions)
         {
-            Console.WriteLine($"Error fetching transactions: {ex.Message}");
-            return new List<Transaction>();
+            transaction.SenderName = userNames.ContainsKey(transaction.SenderId)
+                ? userNames[transaction.SenderId]
+                : $"User {transaction.SenderId.ToString().Substring(0, 8)}";
+
+            transaction.ReceiverName = userNames.ContainsKey(transaction.ReceiverId)
+                ? userNames[transaction.ReceiverId]
+                : $"User {transaction.ReceiverId.ToString().Substring(0, 8)}";
         }
+
+        return orderedTransactions;
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error fetching transactions: {ex.Message}");
+        return new List<Transaction>();
+    }
+}
     public async Task<List<string>> GetSentEmails(Guid userId)
     {
         var transactions = await _supabase

@@ -18,138 +18,210 @@
     <div class="transfer-container">
         <p> <strong class="transfer-label">Transfer Money</strong></p>
         <EditForm Model="@transferModel" OnValidSubmit="@HandleTransfer">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+            <DataAnnotationsValidator />
+            <ValidationSummary />
 
-    <div class="mb-3">
-        <label for="receiverEmail" class="form-label">Recipient Email</label>
-        <InputText id="receiverEmail" class="form-control" @bind-Value="transferModel.ReceiverEmail" />
+            <div class="mb-3">
+                <label for="receiverEmail" class="form-label">Recipient Email</label>
+                <InputText id="receiverEmail" class="form-control" @bind-Value="transferModel.ReceiverEmail" />
+            </div>
+
+            <div class="mb-3">
+                <label for="amount" class="form-label">Amount</label>
+                <InputNumber id="amount" class="form-control" @bind-Value="transferModel.Amount" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Send Money</button>
+        </EditForm>
+
+        @if (!string.IsNullOrEmpty(statusMessage))
+        {
+            <div class="alert alert-info mt-3">@statusMessage</div>
+        }
     </div>
 
-    <div class="mb-3">
-        <label for="amount" class="form-label">Amount</label>
-        <InputNumber id="amount" class="form-control" @bind-Value="transferModel.Amount" />
+    <div class="transfer-container">
+        <p> <strong class="transfer-label">Transfer Money Between Accounts</strong></p>
+        <EditForm Model="@internalTransfer" OnValidSubmit="@HandleInternalTransfer">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label for="targetAccount">Transfer To</label>
+                <InputSelect id="targetAccount" class="form-control" @bind-Value="internalTransfer.TargetAccountId">
+                    @foreach (var acc in UserAccounts.Where(a => a.Id != UserService.CurrentAccountId))
+                    {
+                        <option value="@acc.Id">@acc.Name (@acc.Type)</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="mb-3">
+                <label for="internalAmount">Amount</label>
+                <InputNumber id="internalAmount" class="form-control" @bind-Value="internalTransfer.Amount" />
+            </div>
+
+            <button type="submit" class="btn btn-success">Transfer Between My Accounts</button>
+        </EditForm>
+        @if (!string.IsNullOrEmpty(internalStatusMessage))
+        {
+            <div class="alert alert-info mt-3">@internalStatusMessage</div>
+        }
     </div>
 
-    <button type="submit" class="btn btn-primary">Send Money</button>
-</EditForm>
-
-@if (!string.IsNullOrEmpty(statusMessage))
-{
-    <div class="alert alert-info mt-3">@statusMessage</div>
-}
-    </div>
-        
 </div>
 
 @code {
     private TransferModel transferModel = new();
     private string statusMessage;
-    private string ErrorMessage;
-    private string RecipientEmail { get; set; } = string.Empty;
+    private string internalStatusMessage;
     private List<string> AllRelevantRecipients { get; set; } = new();
     private List<string> FilteredRecipients { get; set; } = new();
+
+    private class InternalTransferModel
+    {
+        [Required]
+        public Guid TargetAccountId { get; set; }
+
+        [Required]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be positive.")]
+        public decimal Amount { get; set; }
+    }
+
+    private InternalTransferModel internalTransfer = new();
+    private List<Account> UserAccounts = new();
+
     protected override async Task OnInitializedAsync()
     {
         var session = SupabaseService.GetClient().Auth.CurrentSession;
         if (session == null)
         {
-            ErrorMessage = "Please log in ";
+            //ErrorMessage = "Please log in ";
             return;
         }
         var sentTo = await TransactionsService.GetSentEmails(Guid.Parse(session.User.Id));
-    var receivedFrom = await TransactionsService.GetReceivedEmails(Guid.Parse(session.User.Id));
+        var receivedFrom = await TransactionsService.GetReceivedEmails(Guid.Parse(session.User.Id));
 
-    AllRelevantRecipients = sentTo
+        AllRelevantRecipients = sentTo
         .Concat(receivedFrom)
         .Distinct()
         .ToList();
+
+        UserAccounts = await DataService.GetUserAccounts();
+
 
     }
 
     private async Task HandleTransfer()
     {
-        var session = SupabaseService.GetClient().Auth.CurrentSession;
-        if (session == null)
+        Console.WriteLine("HandleTransfer called");
+        statusMessage = "";
+
+        if (UserService.CurrentAccountId == null)
         {
-            statusMessage = "Please log in first.";
+            statusMessage = "No account selected.";
+            Console.WriteLine(statusMessage);
             return;
         }
 
         try
         {
-            // senderId from session
-            var senderId = session.User.Id;
-            if (string.IsNullOrEmpty(senderId))
-            {
-                statusMessage = "Invalid session.";
-                return;
-            }
+            var senderAccountId = UserService.CurrentAccountId.Value;
 
-            // Fetch sender full BankUser profile
-            var sender = await SupabaseService.GetClient()
-                .From<BankUser>()
-                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, senderId)
-                .Single();
-
-            if (sender == null)
-            {
-                statusMessage = "Sender profile not found.";
-                return;
-            }
-
-            // Find receiver by email
-            var receiver = await SupabaseService.GetClient()
-                .From<BankUser>()
-                .Filter("email", Supabase.Postgrest.Constants.Operator.Equals, transferModel.ReceiverEmail)
-                .Single();
-
-            if (receiver == null)
+            // Look up recipient BankUser by email
+            var receiverUser = await SupabaseService.FindUserByEmailAsync(transferModel.ReceiverEmail);
+            if (receiverUser == null)
             {
                 statusMessage = "Recipient not found.";
                 return;
             }
 
-            if (transferModel.Amount <= 0)
+            // Get recipient's default (checking) account
+            var receiverAccountResp = await SupabaseService.GetClient()
+            .From<Account>()
+            .Filter("user_id", Operator.Equals, receiverUser.Id)
+            .Get();
+
+            var receiverAccount = receiverAccountResp.Models
+            .FirstOrDefault(a => a.Type.ToLower() == "checking") ?? receiverAccountResp.Models.FirstOrDefault();
+
+            if (receiverAccount == null)
             {
-                statusMessage = "Transfer amount must be positive.";
+                statusMessage = "Recipient has no available account.";
                 return;
             }
 
-            if (sender.Balance < transferModel.Amount)
+            // Call the account-level transaction method
+            var result = await TransactionsService.SendTransactionAsync(
+            senderAccountId,
+            receiverAccount.Id,
+            transferModel.Amount
+            );
+
+            if (result == "Transaction successful!")
             {
-                statusMessage = "Insufficient funds.";
-                return;
+                statusMessage = $"Transfer successful! ${transferModel.Amount} sent to {transferModel.ReceiverEmail}.";
             }
 
-            // Perform the transfer
-            TransactionsService.SendTransactionAsync(Guid.Parse(senderId), Guid.Parse(receiver.Id), transferModel.Amount);
-            /*sender.Balance -= transferModel.Amount;
-            receiver.Balance += transferModel.Amount;*/
-
-            await SupabaseService.GetClient().From<BankUser>().Update(sender);
-            await SupabaseService.GetClient().From<BankUser>().Update(receiver);
-
-            statusMessage = $"Successfully sent ${transferModel.Amount} to {transferModel.ReceiverEmail}!";
         }
         catch (Exception ex)
         {
-            statusMessage = $"Error: {ex.Message}";
+            statusMessage = $"Error processing transfer: {ex.Message}";
+            Console.WriteLine(statusMessage);
         }
     }
+    private async Task HandleInternalTransfer()
+    {
+        if (UserService.CurrentAccountId == null)
+        {
+            internalStatusMessage = "No source account selected.";
+            return;
+        }
+
+        if (internalTransfer.TargetAccountId == Guid.Empty)
+        {
+            internalStatusMessage = "Please select a valid destination account.";
+            return;
+        }
+
+        if (UserService.CurrentAccountId == internalTransfer.TargetAccountId)
+        {
+            internalStatusMessage = "Cannot transfer to the same account.";
+            return;
+        }
+
+        try
+        {
+            var result = await TransactionsService.SendTransactionAsync(
+            UserService.CurrentAccountId.Value,
+            internalTransfer.TargetAccountId,
+            internalTransfer.Amount,
+            true
+            );
+
+            internalStatusMessage = result.Contains("successful")
+            ? $"Successfully transferred ${internalTransfer.Amount} between your accounts."
+            : result;
+        }
+        catch (Exception ex)
+        {
+            internalStatusMessage = $"Internal transfer error: {ex.Message}";
+        }
+    }
+
     private void FilterSuggestions(ChangeEventArgs e)
-{
-    var input = e.Value?.ToString() ?? string.Empty;
-    FilteredRecipients = AllRelevantRecipients
+    {
+        var input = e.Value?.ToString() ?? string.Empty;
+        FilteredRecipients = AllRelevantRecipients
         .Where(email => email.Contains(input, StringComparison.OrdinalIgnoreCase))
         .ToList();
-}
+    }
 
-private void SelectRecipient(string email)
-{
-    transferModel.ReceiverEmail = email;
-    FilteredRecipients.Clear();
-}
+    private void SelectRecipient(string email)
+    {
+        transferModel.ReceiverEmail = email;
+        FilteredRecipients.Clear();
+    }
 
     public class TransferModel
     {
@@ -160,4 +232,11 @@ private void SelectRecipient(string email)
         [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be positive.")]
         public decimal Amount { get; set; }
     }
+
+    private string RecipientEmail { get; set; }
+    private decimal Amount { get; set; }
+    private string ErrorMessage { get; set; }
+    private string SuccessMessage { get; set; }
+
+
 }

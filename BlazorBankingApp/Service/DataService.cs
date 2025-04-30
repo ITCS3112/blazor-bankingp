@@ -38,6 +38,22 @@ namespace BlazorBankingApp.Service
             _supabaseService = supabaseService;
             _userService = userService;
         }
+        public async Task<List<Account>> GetUserAccounts()
+        {
+            var session = _supabaseService.GetClient().Auth.CurrentSession;
+            if (session == null || session.User == null)
+                throw new InvalidOperationException("No user is logged in.");
+
+            var userId = Guid.Parse(session.User.Id);
+
+            var response = await _supabaseService.GetClient()
+                .From<Account>()
+                .Filter("user_id", Supabase.Postgrest.Constants.Operator.Equals, userId.ToString())
+                .Get();
+
+            return response.Models;
+        }
+
 
 
         /// <summary>
@@ -87,7 +103,7 @@ namespace BlazorBankingApp.Service
 
                 if (bankUser != null)
                 {
-                    _userService.balance = (float)bankUser.Balance;
+                    //_userService.balance = (float)bankUser.Balance;
                     Console.WriteLine($"Loaded user: {supabaseService.GetClient().Auth.CurrentSession?.User?.Email} Balance: {_userService.balance} - DataService.FetchBalance");
                     return _userService.balance;
                 }
@@ -103,6 +119,19 @@ namespace BlazorBankingApp.Service
                 throw;
             }
         }
+
+        public async Task<decimal> FetchBalanceForAccount(Guid accountId)
+        {
+            var response = await _supabaseService.GetClient()
+                .From<Account>()
+                .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, accountId.ToString())
+                .Single();
+
+            return response.Balance;
+        }
+
+
+
 
 
         /// <summary>

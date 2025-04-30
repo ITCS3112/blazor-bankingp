@@ -31,4 +31,10 @@ public class Transaction : BaseModel
 
     [Supabase.Postgrest.Attributes.Column("timestamp")]
     public DateTime Timestamp { get; set; }
+
+    [Supabase.Postgrest.Attributes.Column("is_internal")]
+    public bool IsInternal { get; set; }
+
+    public string SenderAccountName { get; set; }
+    public string ReceiverAccountName { get; set; }
 }

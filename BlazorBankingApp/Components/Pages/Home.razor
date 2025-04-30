@@ -18,7 +18,16 @@
 <div class="home-page-background">
     <div class="balance-container">
         <p>
-            <strong class="balance-label">Balance:</strong>
+            <strong class="balance-label">Balance:
+                @if (CurrentAccount != null)
+                {
+                    <span>@CurrentAccount.Name</span>
+                }
+                else
+                {
+                    <span>Loading...</span>
+                }
+            </strong>
         </p>
         <p class="balance-amount">@Balance.ToString("C2")</p>
     </div>
@@ -75,13 +84,15 @@
 
 
 @code {
-    private float Balance { get; set; }
+    private decimal Balance { get; set; }
     private string ID => SupabaseService.GetClient().Auth.CurrentSession?.User?.Id?.ToString() ?? string.Empty;
     private List<Transaction> transactions { get; set; }
     private string Name { get; set; } = string.Empty;
     private bool IsLoading { get; set; }
     private string ErrorMessage { get; set; } = string.Empty;
-
+    private List<Account> Accounts { get; set; }
+    private Account CurrentAccount { get; set; }
+    private string AccountName { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -92,47 +103,80 @@
             return;
         }
 
+        await UserService.InitializeDefaultAccount();
+        var selectedAccount = UserService.CurrentAccountId;
+        
 
-        Balance = await DataService.FetchBalance();
+        if (selectedAccount == null)
+        {
+            ErrorMessage = "Please select an account.";
+            Console.WriteLine("No account selected. Redirecting to accounts page.");
+            //Navigation.NavigateTo("/accounts", forceLoad: true);
+            return;
+        }
+
+        try
+        {
+            Balance = await DataService.FetchBalanceForAccount(selectedAccount.Value);
+            Accounts = await DataService.GetUserAccounts();
+
+            CurrentAccount = Accounts.FirstOrDefault(a => a.Id == selectedAccount.Value);
+            if (CurrentAccount != null)
+            {
+                AccountName = CurrentAccount.Name;
+            }
+            else
+            {
+                ErrorMessage = "Selected account not found.";
+                return;
+            }
+            await FetchTransactions();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading account: {ex.Message}";
+        }
+
+        //Balance = await DataService.FetchBalanceForAccount(UserService.CurrentAccountId.Value);
         await FetchTransactions(); // Fetch transactions on initialization
     }
 
 
-    private async Task TestTransfer()
+    /*private async Task TestTransfer()
     {
-        try
-        {
-            var session = SupabaseService.GetClient().Auth.CurrentSession;
-            if (session == null)
-            {
-                ErrorMessage = "User session is not available. Please log in again.";
-                return;
-            }
-            Console.WriteLine($"Current user: {session.User.Email}");
-
-
-            var senderId = Guid.Parse(session.User.Id);
-            decimal amount = 1.00M; // Example amount to transfer
-            var recipientId = Guid.Parse("15d4d672-03cc-4b24-8429-88b8bbbdd9a8"); // Replace with actual recipient ID
-            Console.WriteLine($"Sender ID: {senderId}");
-            Console.WriteLine($"Recipient ID: {recipientId}");
-            Console.WriteLine($"Amount: {amount}");
-            await TransactionsService.SendTransactionAsync(recipientId, senderId, amount);
-            Balance = await DataService.FetchBalance(); // Refresh balance after transfer
-            await FetchTransactions(); // Refresh transactions after transfer
-
-
-            //Testing random transfer insertion
-
-
-
-
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"Error during transfer: {ex.Message}";
-        }
+    try
+    {
+    var session = SupabaseService.GetClient().Auth.CurrentSession;
+    if (session == null)
+    {
+    ErrorMessage = "User session is not available. Please log in again.";
+    return;
     }
+    Console.WriteLine($"Current user: {session.User.Email}");
+
+
+    var senderId = Guid.Parse(session.User.Id);
+    decimal amount = 1.00M; // Example amount to transfer
+    var recipientId = Guid.Parse("15d4d672-03cc-4b24-8429-88b8bbbdd9a8"); // Replace with actual recipient ID
+    Console.WriteLine($"Sender ID: {senderId}");
+    Console.WriteLine($"Recipient ID: {recipientId}");
+    Console.WriteLine($"Amount: {amount}");
+    await TransactionsService.SendTransactionAsync(recipientId, senderId, amount);
+    Balance = await DataService.FetchBalance(); // Refresh balance after transfer
+    await FetchTransactions(); // Refresh transactions after transfer
+
+
+    //Testing random transfer insertion
+
+
+
+
+    }
+    catch (Exception ex)
+    {
+    ErrorMessage = $"Error during transfer: {ex.Message}";
+    }
+    }*/
     private async Task FetchTransactions()
     {
         try
@@ -146,7 +190,16 @@
 
 
             var userId = Guid.Parse(session.User.Id);
-            transactions = await TransactionsService.GetTransactionsAsync(userId);
+            if (UserService.CurrentAccountId.HasValue)
+            {
+                Console.WriteLine($"Fetching transactions for account ID: {UserService.CurrentAccountId.Value}");
+                transactions = await TransactionsService.GetTransactionsAsync(UserService.CurrentAccountId.Value);
+            }
+            else
+            {
+                ErrorMessage = "Current account ID is not available.";
+                transactions = new List<Transaction>();
+            }
             if (transactions == null)
             {
                 Console.WriteLine("Transactions result is null");

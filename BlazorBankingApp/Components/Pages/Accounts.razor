@@ -10,9 +10,215 @@
 @using static Supabase.Postgrest.Constants;
 @using Supabase.Postgrest.Extensions;
 @using BlazorBankingApp.Service;
+@using System.ComponentModel.DataAnnotations;
 
-<h1>Testing Icons</h1>
-<p><i class="bi bi-house-door-fill"></i> House</p>
-<p><i class="bi bi-person-circle"></i> Family</p>
-<p><i class="bi bi-wallet2"></i> Wallet</p>
-<p><i class="bi bi-arrow-left-right"></i> Transfer</p>
+@inject Services.UserService UserService
+
+<div class="accounts-page-background">
+    <div class="account-container">
+        <h3>Your Accounts</h3>
+
+        <select @onchange="OnAccountSelected">
+            @try
+            {
+                @foreach (var account in accounts)
+                {
+                    <option value="@account.Id">@account.Name (@account.Type)</option>
+                }
+            }
+            catch (Exception ex)
+            {
+                <option disabled>Error loading accounts: @ex.Message</option>
+            }
+        </select>
+        <p>Savings accounts cannot balance selected as the active account</p>
+
+        @if (accounts == null)
+        {
+            <p>Loading...</p>
+        }
+        else if (!accounts.Any())
+        {
+            <p>No accounts found.</p>
+        }
+        else
+        {
+            <ul>
+                @foreach (var acc in accounts)
+                {
+                    <li>
+                        <strong>@acc.Name</strong> (@acc.Type) — @acc.Balance.ToString("C")
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+
+    <div class="account-container">
+        <h4>Open a New Account</h4>
+
+        <EditForm Model="@newAccount" OnValidSubmit="@CreateAccount">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label for="name">Account Name</label>
+                <InputText id="name" class="form-control" @bind-Value="newAccount.Name" />
+            </div>
+
+            <div class="mb-3">
+                <label for="type">Account Type</label>
+                <InputSelect id="type" class="form-control" @bind-Value="newAccount.Type">
+                    <option value="checking">Checking</option>
+                    <option value="savings">Savings ($100 minimum to open)</option>
+                </InputSelect>
+            </div>
+
+            <div class="mb-3">
+                <label for="balance">Starting Balance</label>
+                <InputNumber id="balance" class="form-control" @bind-Value="newAccount.StartingBalance" />
+            </div>
+
+            <button class="btn btn-success" type="submit">Open Account</button>
+        </EditForm>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(AccountMessage))
+{
+    <div class="mt-2 alert alert-info">@AccountMessage</div>
+}
+
+@code {
+    private decimal Balance;
+    private List<Account> accounts;
+    private NewAccountModel newAccount = new();
+    private string AccountMessage = "";
+
+    public class NewAccountModel
+    {
+        [Required]
+        public string Name { get; set; }
+
+        [Required]
+        public string Type { get; set; } = "checking";
+
+        [Range(0.01, double.MaxValue, ErrorMessage = "Starting balance must be greater than 0.")]
+        public decimal StartingBalance { get; set; }
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            accounts = await DataService.GetUserAccounts();
+
+            if (UserService.CurrentAccountId != null)
+            {
+                Balance = await DataService.FetchBalanceForAccount(UserService.CurrentAccountId.Value);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading accounts: {ex.Message}");
+        }
+    }
+
+    private void OnAccountSelected(ChangeEventArgs e)
+    {
+        var selectedId = Guid.Parse(e.Value.ToString());
+        var selectedAccount = accounts.FirstOrDefault(a => a.Id == selectedId);
+
+        if (selectedAccount == null)
+        {
+            Console.WriteLine("Selected account not found.");
+            return;
+        }
+
+        if (selectedAccount.Type.ToLower() == "savings")
+        {
+            Console.WriteLine("Savings accounts cannot be set as the current active account.");
+            // Optionally show UI message to user here
+
+            return;
+        }
+
+        UserService.SetCurrentAccount(selectedId);
+        Navigation.NavigateTo("/home", forceLoad: true);
+    }
+
+    private async Task CreateAccount()
+    {
+        try
+        {
+            if (newAccount.Type.ToLower() == "savings" && newAccount.StartingBalance < 100)
+            {
+                AccountMessage = "Savings accounts require a minimum balance of $100.";
+                return;
+            }
+
+            var session = SupabaseService.GetClient().Auth.CurrentSession;
+            if (session == null)
+            {
+                AccountMessage = "You must be logged in to open an account.";
+                return;
+            }
+
+            if (UserService.CurrentAccountId == null)
+            {
+                AccountMessage = "You must have a current account selected.";
+                return;
+            }
+
+            // 1. Get the user's current (source) account
+            var sourceAccountResp = await SupabaseService.GetClient()
+            .From<Account>()
+            .Filter("id", Operator.Equals, UserService.CurrentAccountId.Value.ToString())
+            .Get();
+
+            var sourceAccount = sourceAccountResp.Models.FirstOrDefault();
+            if (sourceAccount == null)
+            {
+                AccountMessage = "Could not load your current account.";
+                return;
+            }
+
+            // 2. Check if balance is sufficient
+            if (sourceAccount.Balance < newAccount.StartingBalance)
+            {
+                AccountMessage = "Insufficient funds in current account.";
+                return;
+            }
+
+            // 3. Deduct from current account
+            sourceAccount.Balance -= newAccount.StartingBalance;
+            await SupabaseService.GetClient().From<Account>().Update(sourceAccount);
+
+            // 4. Insert the new account
+            var newAcc = new Account
+            {
+                Id = Guid.NewGuid(),
+                UserId = Guid.Parse(session.User.Id),
+                Name = newAccount.Name,
+                Type = newAccount.Type.ToLower(),
+                Balance = newAccount.StartingBalance
+            };
+
+            await SupabaseService.GetClient()
+            .From<Account>()
+            .Insert(newAcc);
+
+            AccountMessage = $"Successfully opened {newAcc.Type} account with ${newAcc.Balance:F2}.";
+
+            // 5. Refresh account list and reset form
+            newAccount = new();
+            accounts = await DataService.GetUserAccounts();
+        }
+        catch (Exception ex)
+        {
+            AccountMessage = $"Error creating account: {ex.Message}";
+        }
+    }
+
+}
