@@ -43,6 +43,7 @@ public class UserService
     public string? phone { get; set; }
     public float balance { get; set; }
     public Guid? CurrentAccountId { get; set; }
+    public Account? CurrentAccount { get; set; }
 
     /// <summary>
     /// Initializes the UserService instance with the given Supabase client.
@@ -221,6 +222,7 @@ public class UserService
         {
             Console.WriteLine("No account found for user.");
         }
+        CurrentAccount = defaultAccount;
     }
 
 

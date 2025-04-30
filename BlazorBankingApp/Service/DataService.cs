@@ -68,57 +68,7 @@ namespace BlazorBankingApp.Service
         /// If the session or user is unavailable, an exception is thrown. The balance is updated in the UserService
         /// if retrieved successfully. Any errors encountered during the process are logged and rethrown.
         /// </remarks>
-        public async Task<float> FetchBalance()
-        {
-            try
-            {
-                var session = _supabaseService.GetClient().Auth.CurrentSession;
-                if (session == null || session.User == null)
-                {
-                    throw new InvalidOperationException("User session is not available. Please log in again. - DataService.FetchBalance");
-                }
-                Console.WriteLine($"Session restored. User ID: {session.User.Id} - DataService.FetchBalance");
-
-                using var supabaseService = _supabaseService;
-                await supabaseService.RestoreSession();
-
-                Console.WriteLine($"Fetching balance for user ID: {session.User.Id} - DataService.FetchBalance");
-
-                // Fetch the balance for the authenticated user
-                BankUser bankUser = await supabaseService.GetClient()
-                    .From<BankUser>()
-                    .Select("balance")
-                    .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, session.User.Id)
-                    .Single();
-
-
-                //If the count == 0 then the user is not in the BankUser table
-                var debugResponse = await supabaseService.GetClient()
-                    .From<BankUser>()
-                    .Select("*")
-                    .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, session.User.Id)
-                    .Get();
-
-                Console.WriteLine($"Debug query result count: {debugResponse.Models.Count} - DataService.FetchBalance");
-
-                if (bankUser != null)
-                {
-                    //_userService.balance = (float)bankUser.Balance;
-                    Console.WriteLine($"Loaded user: {supabaseService.GetClient().Auth.CurrentSession?.User?.Email} Balance: {_userService.balance} - DataService.FetchBalance");
-                    return _userService.balance;
-                }
-                else
-                {
-                    Console.WriteLine("Failed to load user balance. - DataService.FetchBalance");
-                }
-                return 0f; //means users balance was not found
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching balance: {ex.Message} - {ex.StackTrace ?? "DataService.FetchBalance"}");
-                throw;
-            }
-        }
+        
 
         public async Task<decimal> FetchBalanceForAccount(Guid accountId)
         {
@@ -221,75 +171,50 @@ namespace BlazorBankingApp.Service
         /// the method returns <c>false</c>. Any errors encountered during the process are logged and rethrown.
         /// </remarks>
         public async Task<bool> AddToBalance(float amountToAdd)
+{
+    var _supabaseClient = _supabaseService.GetClient();
+
+    try
+    {
+        var currentAccount = _userService.CurrentAccount;
+
+        if (currentAccount == null)
         {
-            var _supabaseClient = _supabaseService.GetClient();
-
-            try
-            {
-                // Get the current user ID from the Supabase client
-                var userId = _supabaseClient.Auth.CurrentSession?.User?.Id;
-                if (string.IsNullOrEmpty(userId))
-                {
-                    Console.WriteLine("User is not authenticated. - DataService.AddToBalance");
-                    return false;
-                }
-
-                // Fetch the current balance for the user
-                Console.WriteLine($"Supabase Auth ID: {userId} - DataService.AddToBalance");
-                var response = await _supabaseClient
-                    .From<BankUser>()
-                    .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, userId)
-                    .Get();
-
-                // Check if the response contains any models
-                if (response.Models == null || !response.Models.Any())
-                {
-                    Console.WriteLine("No user model found for given ID. - DataService.AddToBalance");
-                    return false;
-                }
-
-                // Get the first model from the response
-                var user = response.Models.First();
-                Console.WriteLine($"Current balance: {user.Balance} - DataService.AddToBalance");
-
-                // Add the amount to the user's balance
-                user.Balance += (decimal)amountToAdd;
-
-                // Update the user's balance in the BankUser table
-                var updateResponse = await _supabaseClient
-                    .From<BankUser>()
-                    .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, userId)
-                    .Update(user);
-
-                // Check if the update was successful
-                // If the update response is not null and contains models, the update was successful
-                if (updateResponse != null)
-                {
-                    if (updateResponse.Models.Count > 0)
-                    {
-                        Console.WriteLine("Balance update successful. - DataService.AddToBalance");
-                        _userService.balance = (float)user.Balance;
-                        return true;
-                    }
-                    else
-                    {
-                        Console.WriteLine("Update response empty. - DataService.AddToBalance");
-                        return false;
-                    }
-
-                }
-                else
-                {
-                    Console.WriteLine("Balance update failed - update response null. - DataService.AddToBalance");
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error updating balance: {ex.Message} - DataService.AddToBalance");
-                return false;
-            }
+            Console.WriteLine("No current account is set. - DataService.AddToBalance");
+            return false;
         }
+
+        Console.WriteLine($"Updating balance for Account ID: {currentAccount.Id}");
+
+        // Add to balance
+        currentAccount.Balance += (decimal)amountToAdd;
+
+        // Push the updated balance to Supabase
+        var updateResponse = await _supabaseClient
+            .From<Account>()
+            .Filter("id", Supabase.Postgrest.Constants.Operator.Equals, currentAccount.Id.ToString())
+            .Update(currentAccount);
+
+        if (updateResponse != null && updateResponse.Models.Any())
+        {
+            Console.WriteLine("Balance update successful. - DataService.AddToBalance");
+
+            // Sync local balance for UI/logic
+            _userService.balance = (float)currentAccount.Balance;
+            return true;
+        }
+        else
+        {
+            Console.WriteLine("Update failed or returned no updated models. - DataService.AddToBalance");
+            return false;
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error updating balance: {ex.Message} - DataService.AddToBalance");
+        return false;
+    }
+}
 
 
         /// <summary>

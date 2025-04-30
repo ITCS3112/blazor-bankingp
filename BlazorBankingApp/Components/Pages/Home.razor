@@ -19,9 +19,9 @@
     <div class="balance-container">
         <p>
             <strong class="balance-label">Balance:
-                @if (CurrentAccount != null)
+                @if (UserService.CurrentAccount != null)
                 {
-                    <span>@CurrentAccount.Name</span>
+                    <span>@UserService.CurrentAccount.Name</span>
                 }
                 else
                 {
@@ -105,7 +105,7 @@
 
         await UserService.InitializeDefaultAccount();
         var selectedAccount = UserService.CurrentAccountId;
-        
+
 
         if (selectedAccount == null)
         {

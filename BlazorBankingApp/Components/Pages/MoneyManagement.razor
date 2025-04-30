@@ -99,29 +99,20 @@
     private bool IsLoading { get; set; }
     private string ErrorMessage { get; set; } = string.Empty;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
-        var session = SupabaseService.GetClient().Auth.CurrentSession;
-        if (session == null)
+        var account = UserService.CurrentAccount;
+
+        if (account == null)
         {
-            ErrorMessage = "Please log in to view your balance.";
-            return;
+            ErrorMessage = "No current account found. Please log in.";
+        }
+        else
+        {
+            Balance = account.Balance;
         }
 
-        IsLoading = true;
-        try
-        {
-            float rawBalance = await DataService.FetchBalance();
-            Balance = (decimal)rawBalance;
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"Error loading balance: {ex.Message}";
-        }
-        finally
-        {
-            IsLoading = false;
-        }
+        return Task.CompletedTask;
     }
 
     private async Task DepositMoney()
@@ -135,9 +126,17 @@
         try
         {
             IsLoading = true;
-            Balance += TransactionAmount;
-            await UpdateBalanceInDatabase();
-            ErrorMessage = string.Empty;
+
+            bool success = await DataService.AddToBalance((float)TransactionAmount);
+            if (success)
+            {
+                Balance += TransactionAmount;
+                ErrorMessage = string.Empty;
+            }
+            else
+            {
+                ErrorMessage = "Deposit failed. Please try again.";
+            }
         }
         catch (Exception ex)
         {
@@ -166,9 +165,17 @@
         try
         {
             IsLoading = true;
-            Balance -= TransactionAmount;
-            await UpdateBalanceInDatabase();
-            ErrorMessage = string.Empty;
+
+            bool success = await DataService.AddToBalance(-(float)TransactionAmount);
+            if (success)
+            {
+                Balance -= TransactionAmount;
+                ErrorMessage = string.Empty;
+            }
+            else
+            {
+                ErrorMessage = "Withdrawal failed. Please try again.";
+            }
         }
         catch (Exception ex)
         {
@@ -177,40 +184,6 @@
         finally
         {
             IsLoading = false;
-        }
-    }
-
-    private async Task UpdateBalanceInDatabase()
-    {
-        var client = SupabaseService.GetClient();
-        var userId = client.Auth.CurrentSession?.User?.Id;
-
-        if (userId == null)
-        {
-            throw new Exception("User not authenticated.");
-        }
-
-        // Fetch current user to get required fields like authoritylevel
-        var bankUser = await client
-            .From<BankUser>()
-            .Filter("id", Operator.Equals, userId)
-            .Single();
-
-        if (bankUser == null)
-        {
-            throw new Exception("User not found.");
-        }
-
-        bankUser.Balance = Balance;
-
-        var response = await client
-            .From<BankUser>()
-            .Upsert(bankUser);
-
-        if (!response.ResponseMessage.IsSuccessStatusCode)
-        {
-            var error = await response.ResponseMessage.Content.ReadAsStringAsync();
-            throw new Exception($"Error updating balance in database: {error}");
         }
     }
 }

@@ -132,6 +132,12 @@
                 return;
             }
 
+            if (password.Length < 6)
+            {
+                signUpMessage = "Password must be at least 6 characters long.";
+                return;
+            }
+
             var user = (Supabase.Gotrue.User?) null;
 
             //Signs up an admin if the adminID is 4321 and user else wise
@@ -160,6 +166,7 @@
             {
                 var currentSession = await SupabaseService.GetClient().Auth.SignIn(email, password);
                 success = true;
+                signUpMessage = "Sign up successful! Loading...";
             }
             else
             {
