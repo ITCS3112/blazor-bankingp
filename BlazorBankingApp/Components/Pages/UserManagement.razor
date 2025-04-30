@@ -1,3 +1,9 @@
+<!--
+    This file is used to allow admins to manage users.
+    It allows admins to search for users.
+    **IMPORTANT**: this file is not finished yet we wanted to get the add and delete user functionality working first.
+-->
+
 @inject NavigationManager Navigation
 @inject Services.SupabaseService SupabaseService
 @inject Services.UserService UserService
@@ -104,6 +110,9 @@
 
     private string DeleteEmail = string.Empty;
 
+    /// <summary>
+    /// Fetches all users from the database when the component is initialized.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         var session = SupabaseService.GetClient().Auth.CurrentSession;
@@ -128,8 +137,13 @@
         {
             IsLoading = false;
         }
-    }
+    }   
 
+
+    /// <summary>
+    /// Adds a new user to the database.
+    /// **NOT FINISHED**: This method is not finished yet.
+    /// </summary>
     private async Task AddUser()
     {
         try
@@ -162,6 +176,10 @@
         }
     }
 
+    /// <summary>
+    /// Deletes a user from the database.
+    /// **NOT FINISHED**: This method is not finished yet.
+    /// </summary>
     /*private async Task DeleteUser()
     {
     try
@@ -215,7 +233,10 @@
     }*/
 
 
-
+    /// <summary>
+    /// Fetches all users from the database.
+    /// </summary>
+    /// <returns>A list of BankUser objects.</returns>
     public async Task<List<BankUser>> FetchUsers()
     {
         try
@@ -249,6 +270,9 @@
         }
     }
 
+    /// <summary>
+    /// Performs a search for users based on the search term.
+    /// </summary>
     public async Task PerformSearch()
     {
         Console.WriteLine($"PerformSearch called with SearchTerm: {SearchTerm} - UserManagement.razor.cs");

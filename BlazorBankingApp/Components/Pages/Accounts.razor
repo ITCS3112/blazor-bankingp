@@ -1,3 +1,7 @@
+<!--
+    This file is for creation of accounts that users can use to manage their finances.
+-->
+
 @page "/accounts"
 @rendermode InteractiveServer
 @inject Services.SupabaseService SupabaseService
@@ -89,12 +93,17 @@
     <div class="mt-2 alert alert-info">@AccountMessage</div>
 }
 
+
+
 @code {
     private decimal Balance;
     private List<Account> accounts;
     private NewAccountModel newAccount = new();
     private string AccountMessage = "";
 
+    /// <summary>
+    /// Model for creating a new account.
+    /// </summary>
     public class NewAccountModel
     {
         [Required]
@@ -108,6 +117,10 @@
     }
 
 
+    /// <summary>
+    /// This method is called when the component is initialized.
+    /// It retrieves the current account balance and sets it to the Balance property.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         try
@@ -125,6 +138,12 @@
         }
     }
 
+
+    /// <summary>
+    /// This method is called when the user selects an account from the dropdown.
+    /// It sets the selected account as the current active account.
+    /// </summary>
+    /// <param name="e">The event arguments containing the selected account ID.</param>
     private void OnAccountSelected(ChangeEventArgs e)
     {
         var selectedId = Guid.Parse(e.Value.ToString());
@@ -148,6 +167,11 @@
         Navigation.NavigateTo("/home", forceLoad: true);
     }
 
+
+    /// <summary>
+    /// This method is called when the user submits the form to create a new account.
+    /// It validates the input and creates a new account if valid.
+    /// </summary>
     private async Task CreateAccount()
     {
         try

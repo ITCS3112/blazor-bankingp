@@ -1,3 +1,7 @@
+<!--
+    This page allows admins to search transactions by sender or receiver ID.
+    It includes a search bar and a table displaying the transaction history.
+-->
 @page "/manageTransactions"
 @inject NavigationManager Navigation
 @inject Services.SupabaseService SupabaseService
@@ -72,6 +76,9 @@
     bool IsLoading { get; set; }
     string ErrorMessage { get; set; } = string.Empty;
 
+    /// <summary>
+    /// On the page load, fetch all transactions.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         var session = SupabaseService.GetClient().Auth.CurrentSession;
@@ -84,6 +91,9 @@
         await FetchTransactions();
     }
 
+    /// <summary>
+    /// Fetches transactions from the database.
+    /// </summary>
     private async Task FetchTransactions()
     {
         try
@@ -121,6 +131,9 @@
         }
     }
 
+    /// <summary>
+    /// Performs a search for transactions based on the search term.
+    /// </summary>
     public async Task PerformSearch()
     {
         if (transactions == null)
@@ -157,17 +170,32 @@
         StateHasChanged();
     }
 
+    /// <summary>
+    /// Checks if a transaction is sent by the current user.
+    /// </summary>
+    /// <param name="transaction">The transaction to check.</param>
+    /// <returns>True if the transaction is sent by the user, otherwise false.</returns>
     private bool IsUserSender(Transaction transaction)
     {
         var userId = SupabaseService.GetClient().Auth.CurrentSession?.User?.Id;
         return transaction.SenderId.ToString() == userId;
     }
 
+    /// <summary>
+    /// Gets the CSS class for the transaction based on whether the user is the sender or receiver.
+    /// </summary>
+    /// <param name="transaction">The transaction to check.</param>
+    /// <returns>The CSS class name.</returns>
     private string GetTransactionClass(Transaction transaction)
     {
         return IsUserSender(transaction) ? "outgoing-transaction" : "incoming-transaction";
     }
 
+    /// <summary>
+    /// Gets the CSS class for the transaction amount based on whether the user is the sender or receiver.
+    /// </summary>    
+    /// <param name="transaction">The transaction to check.</param>
+    /// <returns>The formatted transaction amount.</returns>
     private string FormatTransactionAmount(Transaction transaction)
     {
         return IsUserSender(transaction)
@@ -175,6 +203,11 @@
             : $"+${transaction.Amount:F2}";
     }
 
+    /// <summary>
+    /// Converts UTC time to EST format.
+    /// </summary>
+    /// <param name="utcTime">The UTC time to convert.</param>
+    /// <returns>The formatted EST time.</returns>
     private string ConvertToEST(DateTime utcTime)
     {
         try
@@ -189,6 +222,11 @@
         }
     }
 
+    /// <summary>
+    /// Shortens the ID for display purposes.
+    /// </summary>
+    /// <param name="id">The ID to shorten.</param>
+    /// <returns>The shortened ID.</returns>
     private string ShortenId(Guid id)
     {
         return id.ToString().Substring(0, 8) + "..."; // Just show first 8 characters

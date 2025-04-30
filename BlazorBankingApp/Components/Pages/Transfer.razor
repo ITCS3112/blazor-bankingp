@@ -1,3 +1,10 @@
+<!--
+    This page allows users to send money to other users or transfer money between their own accounts.
+    It includes input fields for the recipient's email and the amount to be transferred.
+    The page also provides a dropdown for selecting the target account for internal transfers.
+    The page handles validation and displays success or error messages based on the transfer status.
+-->
+
 @page "/transfer"
 @rendermode InteractiveServer
 @inject Services.SupabaseService SupabaseService
@@ -78,6 +85,9 @@
     private List<string> AllRelevantRecipients { get; set; } = new();
     private List<string> FilteredRecipients { get; set; } = new();
 
+    /// <summary>
+    /// Handles the submission of the transfer form.
+    /// </summary>
     private class InternalTransferModel
     {
         [Required]
@@ -88,9 +98,19 @@
         public decimal Amount { get; set; }
     }
 
+    /// <summary>
+    /// Model for internal transfer between the user's own accounts.
+    /// </summary>
     private InternalTransferModel internalTransfer = new();
+
+    /// <summary>
+    /// List of accounts associated with the user.
+    /// </summary>
     private List<Account> UserAccounts = new();
 
+    /// <summary>    
+    /// Fetches all users from the database when the component is initialized.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         var session = SupabaseService.GetClient().Auth.CurrentSession;
@@ -112,6 +132,10 @@
 
     }
 
+
+    /// <summary>
+    /// Handles the transfer of money between users.
+    /// </summary>
     private async Task HandleTransfer()
     {
         Console.WriteLine("HandleTransfer called");
@@ -170,6 +194,10 @@
             Console.WriteLine(statusMessage);
         }
     }
+
+    /// <summary>
+    /// Handles the internal transfer between the user's own accounts.
+    /// </summary>
     private async Task HandleInternalTransfer()
     {
         if (UserService.CurrentAccountId == null)
@@ -209,6 +237,10 @@
         }
     }
 
+    /// <summary>
+    /// Filters the recipient suggestions based on the input value.
+    /// </summary>
+    /// <param name="e">The change event arguments.</param>
     private void FilterSuggestions(ChangeEventArgs e)
     {
         var input = e.Value?.ToString() ?? string.Empty;
@@ -217,12 +249,19 @@
         .ToList();
     }
 
+    /// <summary>
+    /// Selects a recipient from the filtered suggestions.
+    /// </summary>
+    /// <param name="email">The email of the selected recipient.</param>
     private void SelectRecipient(string email)
     {
         transferModel.ReceiverEmail = email;
         FilteredRecipients.Clear();
     }
 
+    /// <summary>
+    /// Model for the transfer form.
+    /// </summary>
     public class TransferModel
     {
         [Required]

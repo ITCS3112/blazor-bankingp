@@ -1,4 +1,9 @@
-﻿@page "/home"
+﻿<!-- 
+    This page is the main home page of the Blazor Banking App.
+    It displays the user's balance and transaction history.
+-->
+
+@page "/home"
 @rendermode InteractiveServer
 @inject Services.SupabaseService SupabaseService
 @inject Services.UserService UserService
@@ -94,6 +99,10 @@
     private Account CurrentAccount { get; set; }
     private string AccountName { get; set; }
 
+    /// <summary>
+    /// This method is called when the component is initialized.
+    /// It retrieves the current account balance and sets it to the Balance property.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         var session = SupabaseService.GetClient().Auth.CurrentSession;
@@ -141,7 +150,10 @@
         await FetchTransactions(); // Fetch transactions on initialization
     }
 
-
+    /// <summary>
+    /// Fetches transactions from the database.
+    /// THIS METHOD WAS JUST FOR TESTING PURPOSES
+    /// </summary>
     /*private async Task TestTransfer()
     {
     try
@@ -177,6 +189,10 @@
     ErrorMessage = $"Error during transfer: {ex.Message}";
     }
     }*/
+
+    /// <summary>
+    /// Fetches transactions from the database.
+    /// </summary>
     private async Task FetchTransactions()
     {
         try
@@ -211,6 +227,13 @@
             ErrorMessage = $"Error fetching transactions in Home.razor: {ex.Message}";
         }
     }
+
+    /// <summary>
+    /// This method is called when the user clicks the "Transfer" button.
+    /// It navigates to the transfer page.
+    /// </summary>
+    /// <param name="transaction">The transaction to check.</param>
+    /// <returns>A boolean value indicating whether the user is the sender of the transaction.</returns>
     private bool IsUserSender(Transaction transaction)
     {
         var userId = SupabaseService.GetClient().Auth.CurrentSession?.User?.Id;
@@ -218,18 +241,33 @@
     }
 
 
+    /// <summary>    
+    /// Gets the CSS class for the transaction based on whether the user is the sender or receiver.
+    /// </summary>
+    /// <param name="transaction">The transaction to check.</param>
+    /// <returns>A string representing the CSS class for the transaction.</returns>
     private string GetTransactionClass(Transaction transaction)
     {
         return IsUserSender(transaction) ? "outgoing-transaction" : "incoming-transaction";
     }
 
 
+    /// <summary>    
+    /// Gets the CSS class for the transaction amount based on whether the user is the sender or receiver.
+    /// </summary>
+    /// <param name="transaction">The transaction to check.</param>
+    /// <returns>A string representing the CSS class for the transaction amount.</returns>
     private string GetAmountClass(Transaction transaction)
     {
         return IsUserSender(transaction) ? "negative-amount" : "positive-amount";
     }
 
 
+    /// <summary>
+    /// Formats the transaction amount based on whether the user is the sender or receiver.
+    /// </summary>
+    /// <param name="transaction">The transaction to format.</param>
+    /// <returns>A formatted string representing the transaction amount.</returns>
     private string FormatTransactionAmount(Transaction transaction)
     {
         return IsUserSender(transaction)
@@ -238,11 +276,22 @@
     }
 
 
+    /// <summary>
+    /// Gets the simplified ID for display purposes.
+    /// </summary>    
+    /// <param name="id">The ID to simplify.</param>
+    /// <returns>A string representing the simplified ID.</returns>
     private string GetSimplifiedId(Guid id)
     {
         // Just show first 8 characters of the ID
         return id.ToString().Substring(0, 8) + "...";
     }
+
+    /// <summary>
+    /// Converts UTC time to Eastern Standard Time (EST).
+    /// </summary>    
+    /// <param name="utcTime">The UTC time to convert.</param>
+    /// <returns>A string representing the converted time in EST format.</returns>
     private string ConvertToEST(DateTime utcTime)
     {
         try
@@ -262,23 +311,37 @@
             return utcTime.ToString("MMM dd, yyyy HH:mm"); // Fallback to UTC
         }
     }
+
+    /// <summary>
+    /// Checks if the current user is the sender of the transaction.
+    /// </summary>    
+    /// <param name="userId">The ID of the user to check.</param>    
+    /// <returns>A boolean value indicating whether the current user is the sender.</returns>
     private bool IsCurrentUser(Guid userId)
     {
         var currentUserId = SupabaseService.GetClient().Auth.CurrentSession?.User?.Id;
         return userId.ToString() == currentUserId;
     }
 
+    /// <summary>
+    /// Gets the CSS class for the transaction amount based on whether the current user is the sender or receiver.
+    /// </summary>    
+    /// <param name="transaction">The transaction to check.</param>
+    /// <returns>A string representing the CSS class for the transaction amount.</returns>
     private string GetAmountClas(Transaction transaction)
     {
         return IsCurrentUser(transaction.SenderId) ? "sent-amount" : "received-amount";
     }
 
+    /// <summary>
+    /// Formats the transaction amount based on whether the current user is the sender or receiver.
+    /// </summary>
+    /// <param name="transaction">The transaction to format.</param>
+    /// <returns>A formatted string representing the transaction amount.</returns>
     private string FormatAmount(Transaction transaction)
     {
         return IsCurrentUser(transaction.SenderId)
         ? $"-${transaction.Amount:F2}"
         : $"+${transaction.Amount:F2}";
     }
-
-
 }

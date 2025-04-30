@@ -1,4 +1,10 @@
-﻿@inject Services.SupabaseService SupabaseService
+﻿<!--
+    This file builds the navigation menu for the application.
+    It is used to navigate between the different pages of the application.
+-->
+
+
+@inject Services.SupabaseService SupabaseService
 @inject Service.DataService DataService
 @inject Services.UserService UserService
 @using BlazorBankingApp.Service
@@ -61,6 +67,10 @@
 @code{
     private bool IsAdmin { get; set; } = false;
 
+    /// <summary>
+    /// This method is called when the component is initialized.
+    /// It checks if the user is an admin and sets the IsAdmin property accordingly.
+    /// </summary>
     protected override async Task OnInitializedAsync(){
         try{
             var authority = await DataService.FetchAuthority();

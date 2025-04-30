@@ -1,3 +1,9 @@
+/*
+    Represents a model of the transactions table in the database.
+    Allows us to manage the transactions in the database from our code.
+*/
+
+
 //using System.ComponentModel.DataAnnotations.Schema;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
