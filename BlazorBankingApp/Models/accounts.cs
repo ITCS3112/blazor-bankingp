@@ -1,3 +1,8 @@
+/*
+    Represents a model of the accounts table in the database.
+    Allows us to manage the accounts in the database from our code.
+*/
+
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 

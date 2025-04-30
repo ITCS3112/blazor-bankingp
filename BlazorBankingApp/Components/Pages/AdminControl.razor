@@ -1,3 +1,8 @@
+<!-- 
+    This page allows admins to manage users and transactions.
+    It includes links to manage users and transactions.
+-->
+
 @page "/admin"
 
 @inject NavigationManager Navigation
@@ -55,6 +60,10 @@
     private bool IsLoading = false;
     private string ErrorMessage = string.Empty;
 
+    /// <summary>
+    /// This method is called when the component is initialized.
+    /// It retrieves the current account balance and sets it to the Balance property.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         var session = SupabaseService.GetClient().Auth.CurrentSession;
@@ -65,10 +74,19 @@
         }
     }
 
+    /// <summary>
+    /// This method is called when the user clicks the "Manage Users" link.
+    /// It navigates to the Manage Users page.
+    /// </summary>
     private void NavigateToManageUsers()
     {
         Navigation.NavigateTo("/manageusers");
     }
+
+
+    /// <summary>
+    /// This method is called when the user clicks the "Manage Transactions" link.    
+    /// </summary> 
     private void NavigateToManageTransactions()
     {
         Navigation.NavigateTo("/manageTransactions");

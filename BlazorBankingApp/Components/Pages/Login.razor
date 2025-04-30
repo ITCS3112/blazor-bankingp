@@ -1,3 +1,10 @@
+<!--
+    This page is the opening page of the application. It allows users to log in using their email and password.
+    If the login is successful, the user is redirected to the home page.
+    If the login fails, an error message is displayed.
+    The page also provides a link to create a new account and a link to reset the password.
+-->
+
 @page "/"
 @rendermode InteractiveServer
 @using Supabase
@@ -68,6 +75,9 @@
     private string password;
     private string loginMessage = string.Empty;
 
+    /// <summary>
+    /// This method is called when the user clicks the "Login" button.
+    /// </summary>
     private async Task login()
     {
         try
@@ -80,6 +90,7 @@
 
             Console.WriteLine($"Attempting login with email: {email}");
 
+            // Sign in the user using Supabase
             var response = await supabase.Auth.SignIn(email, password);
 
             if (response?.User != null)

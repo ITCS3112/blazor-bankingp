@@ -1,3 +1,9 @@
+<!-- 
+    This file is for managing money transactions in a banking application.
+    It allows users to deposit or withdraw a entered amount of money from their accounts.
+-->
+
+
 @page "/management"
 
 @rendermode InteractiveServer
@@ -99,6 +105,10 @@
     private bool IsLoading { get; set; }
     private string ErrorMessage { get; set; } = string.Empty;
 
+    /// <summary>
+    /// This method is called when the component is initialized.
+    /// It retrieves the current account balance and sets it to the Balance property.
+    /// </summary>
     protected override Task OnInitializedAsync()
     {
         var account = UserService.CurrentAccount;
@@ -115,6 +125,10 @@
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// This method is called when the user clicks the Deposit button.
+    /// It validates the input amount and calls the DataService to add the amount to the balance.
+    /// </summary>
     private async Task DepositMoney()
     {
         if (TransactionAmount <= 0)
@@ -148,6 +162,10 @@
         }
     }
 
+    /// <summary>
+    /// This method is called when the user clicks the Withdraw button.
+    /// It validates the input amount and calls the DataService to subtract the amount from the balance.
+    /// </summary>
     private async Task WithdrawMoney()
     {
         if (TransactionAmount <= 0)

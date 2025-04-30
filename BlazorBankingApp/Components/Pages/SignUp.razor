@@ -1,3 +1,11 @@
+<!-- 
+    This page is responsible for the sign-up functionality of the application.
+    It allows users to create new accounts by providing their email, password, and confirmed password.
+    a user can become a admin by entering the admin ID (4321) in the admin ID field.
+    The page also includes validation for the password and confirmed password fields.
+    If the passwords do not match, an error message is displayed.
+-->
+
 @page "/signup/"
 
 @rendermode InteractiveServer
@@ -117,27 +125,31 @@
     private bool success;
 
 
+    /// <summary>
+    /// This method is called when the user clicks the "Create Account" button.
+    /// </summary>
     private async Task signUp()
     {
 
         try
         {
             
-
+            // Set display name
             displayname = $"{firstname} {lastname}";
 
+            // Validate input for password
             if (password != confirmedpass)
             {
                 signUpMessage = "Passwords do not match.";
                 return;
             }
-
             if (password.Length < 6)
             {
                 signUpMessage = "Password must be at least 6 characters long.";
                 return;
             }
 
+            // Create user
             var user = (Supabase.Gotrue.User?) null;
 
             //Signs up an admin if the adminID is 4321 and user else wise
@@ -147,7 +159,7 @@
                 user = await SupabaseService.SignUpUser(email, password, displayname, phone, "admin");
                 Console.WriteLine($"Admin created: {user?.Email}");
 
-            }
+            } // Signs up a user if the adminID is not 4321
             else if (adminID != 4321)
             {
                 isAdmin = false;
@@ -162,6 +174,7 @@
                 return;
             }
             
+            // Check if user is created successfully
             if (user != null)
             {
                 var currentSession = await SupabaseService.GetClient().Auth.SignIn(email, password);
@@ -180,7 +193,7 @@
             Console.WriteLine($"Sign up error: {ex.Message}");
             return;
         }
-
+        // Redirect to home page after successful sign up
         if (success)
         {
             NavigationManager.NavigateTo("/home", true);

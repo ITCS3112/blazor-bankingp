@@ -27,10 +27,10 @@ var supabaseOptions = new Supabase.SupabaseOptions
 var supabaseClient = new Supabase.Client(supabaseUrl, supabaseKey, supabaseOptions);
 
 
-// ⚡️ Ensure Supabase is fully initialized before registering services
+// Ensure Supabase is fully initialized before registering services
 await supabaseClient.InitializeAsync();
 
-// 🛠️ Attempt to refresh session on startup to avoid "No active session found" issues
+// Attempt to refresh session on startup to avoid "No active session found" issues
 try
 {
     var session = supabaseClient.Auth.CurrentSession;
@@ -81,7 +81,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// 🌐 Custom Domain Configuration
+// Custom Domain Configuration
 app.Urls.Add("http://CharlotteBanking:5070");
 app.Urls.Remove("http://localhost:5070");
 

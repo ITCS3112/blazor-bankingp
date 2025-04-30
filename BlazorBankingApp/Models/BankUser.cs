@@ -1,3 +1,8 @@
+/*
+    Allows us to manage the bank users in the database from our code.
+    Represents a model of the bank users table in the database.
+*/
+
 using System.ComponentModel.DataAnnotations.Schema;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;

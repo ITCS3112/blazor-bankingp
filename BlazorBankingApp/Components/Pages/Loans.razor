@@ -1,3 +1,10 @@
+<!-- 
+    This page shows loans that users can apply for.
+    It displays a list of loans with their details and allows users to apply for them.
+    The page also handles the loan application process and updates the user's balance accordingly.
+    It only adds money to the balance for demonstration purposes.
+-->
+
 @page "/loan"
 
 @rendermode InteractiveServer
@@ -135,6 +142,10 @@
     private bool LoanSelected { get; set; } = false;
     Loan loan = new Loan();
 
+    /// <summary>
+    /// This method is called when the component is initialized.
+    /// It retrieves the current account balance and sets it to the Balance property.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         var session = SupabaseService.GetClient().Auth.CurrentSession;
@@ -147,6 +158,9 @@
         }
     }
 
+    /// <summary>
+    /// This method is called when the user clicks the Apply Now button.    
+    /// </summary>
     class Loan
     {
         public string LoanType { get; set; }
@@ -154,6 +168,12 @@
         public float LoanAmount { get; set; }
         public int LoanTerm { get; set; }
     }
+
+    /// <summary>
+    /// This method is called when the user clicks the Apply Now button.
+    /// It takes the loan type as a parameter and applies for the selected loan.
+    /// It updates the user's balance and navigates to the home page after a successful application.
+    /// </summary>
     private async Task ApplyForLoan(string loanType)
     {
         IsLoading = true;

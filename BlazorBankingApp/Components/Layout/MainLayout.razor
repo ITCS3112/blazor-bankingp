@@ -1,4 +1,11 @@
-﻿@inherits LayoutComponentBase
+﻿<!-- 
+    This page is used to set a basic page layout for any page thats page does not end with /.
+    It is used to set the sidebar and the top row of the page.
+-->
+
+
+
+@inherits LayoutComponentBase
 @inject NavigationManager Navigation
 @inject Services.SupabaseService SupabaseService
 @inject Services.UserService UserService
@@ -58,6 +65,10 @@
     private string Name { get; set; } = "Name not found";
 
 
+    /// <summary>
+    /// This method is called when the component is initialized.
+    /// It retrieves the current user's name and sets it to the Name property.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         try
@@ -72,6 +83,12 @@
             StateHasChanged();
         }
     }
+
+
+    /// <summary>
+    /// This method is called when the user clicks the logout button.
+    /// It signs out the user and navigates to the login page.
+    /// </summary>
     private async Task Logout()
     {
         try
